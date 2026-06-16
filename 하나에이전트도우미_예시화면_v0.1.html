@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>하나 AI에이전트 도우미 — 프로토타입</title>
+<style>
+  :root{--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--bg:#f8fafc;--indigo:#4f46e5;--indigo-bg:#eef2ff;
+    --amber:#b45309;--amber-bg:#fffbeb;--emerald:#047857;--emerald-bg:#ecfdf5;--red:#b91c1c;--red-bg:#fef2f2;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:ui-sans-serif,system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.5;}
+  .app{display:flex;min-height:100vh;}
+  aside{width:256px;flex-shrink:0;background:#fff;border-right:1px solid var(--line);display:flex;flex-direction:column;}
+  .brand{display:flex;align-items:center;gap:8px;padding:16px;border-bottom:1px solid var(--line);}
+  .brand .mk{width:32px;height:32px;border-radius:8px;background:#00857a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;}
+  .brand .t1{font-size:14px;font-weight:600;line-height:1.2;}
+  .brand .t2{font-size:11px;color:var(--muted);}
+  nav{flex:1;overflow-y:auto;padding:12px;}
+  .grp{font-size:11px;font-weight:600;color:#94a3b8;padding:8px 8px 4px;}
+  nav button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:none;border-radius:8px;padding:9px 10px;font-size:13px;color:#334155;cursor:pointer;}
+  nav button:hover{background:#f1f5f9;}
+  nav button.on{background:var(--ink);color:#fff;}
+  nav .ic{width:16px;text-align:center;color:#94a3b8;font-size:13px;}
+  nav button.on .ic{color:#fff;}
+  main{flex:1;min-width:0;display:flex;flex-direction:column;}
+  header{display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid var(--line);padding:12px 20px;}
+  .hh{font-size:12px;color:var(--muted);}
+  .pill-c{background:var(--amber-bg);color:var(--amber);border:1px solid #fcd34d;border-radius:999px;padding:4px 10px;font-size:11px;}
+  .content{flex:1;overflow-y:auto;padding:28px;}
+  .inner{max-width:880px;margin:0 auto;}
+  h1{font-size:24px;font-weight:700;letter-spacing:-.02em;}
+  h2{font-size:16px;font-weight:600;}
+  .sub{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.6;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;}
+  .pad{padding:16px;}
+  .grid{display:grid;gap:12px;}
+  .g2{grid-template-columns:1fr 1fr;}
+  .g3{grid-template-columns:1fr 1fr 1fr;}
+  @media(max-width:820px){.g2,.g3{grid-template-columns:1fr;} aside{display:none;}}
+  .pill{display:inline-flex;align-items:center;border-radius:999px;border:1px solid;padding:2px 8px;font-size:11px;font-weight:500;}
+  .p-slate{background:#f1f5f9;color:#475569;border-color:#e2e8f0;}
+  .p-indigo{background:var(--indigo-bg);color:#4338ca;border-color:#c7d2fe;}
+  .p-amber{background:var(--amber-bg);color:var(--amber);border-color:#fcd34d;}
+  .p-emerald{background:var(--emerald-bg);color:var(--emerald);border-color:#a7f3d0;}
+  .p-red{background:var(--red-bg);color:var(--red);border-color:#fecaca;}
+  .stnum{display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;align-items:center;justify-content:center;font-size:12px;font-family:ui-monospace,monospace;}
+  .sec{display:flex;align-items:center;gap:8px;margin:24px 0 12px;}
+  .sec h3{font-size:14px;font-weight:600;}
+  .btn{border:0;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;}
+  .btn-dark{background:var(--ink);color:#fff;} .btn-dark:hover{background:#1e293b;}
+  .btn-indigo{background:var(--indigo);color:#fff;} .btn-indigo:hover{opacity:.92;}
+  .btn-ghost{background:#fff;border:1px solid #cbd5e1;color:#334155;} .btn-ghost:hover{background:#f1f5f9;}
+  .btn-soft{background:var(--indigo-bg);border:1px solid #c7d2fe;color:#4338ca;}
+  .btn-lg{padding:13px 22px;font-size:15px;border-radius:10px;}
+  .codebox{background:#0f172a;border-radius:12px;overflow:hidden;}
+  .codebox .ph{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #1e293b;}
+  .codebox .ph span{font-size:11px;color:#94a3b8;font-family:ui-monospace,monospace;}
+  .codebox .cp{font-size:11px;color:#e2e8f0;background:#334155;border:0;border-radius:6px;padding:3px 9px;cursor:pointer;}
+  .codebox pre{padding:13px;color:#e2e8f0;font-family:ui-monospace,monospace;font-size:12px;line-height:1.7;white-space:pre-wrap;overflow-x:auto;}
+  .muted{color:var(--muted);} .mono{font-family:ui-monospace,monospace;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead{background:#f8fafc;color:var(--muted);font-size:11px;}
+  th,td{text-align:left;padding:8px 12px;}
+  tbody tr{border-top:1px solid var(--line);}
+  textarea,input[type=text]{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;}
+  textarea:focus,input:focus{outline:2px solid #c7d2fe;border-color:#c7d2fe;}
+  .frame{border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  .frame .bar{background:#f1f5f9;border-bottom:1px solid var(--line);padding:8px 12px;display:flex;align-items:center;gap:6px;}
+  .dot{width:9px;height:9px;border-radius:50%;}
+  .frame .bd{padding:16px;background:#fafbfc;}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;font-size:12px;cursor:pointer;}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .bar2{height:8px;background:#f1f5f9;border-radius:999px;overflow:hidden;}
+  .bar2 > div{height:8px;border-radius:999px;background:var(--indigo);}
+  .mobtabs{display:none;}
+  @media(max-width:820px){.mobtabs{display:flex;gap:6px;overflow-x:auto;padding:10px;background:#fff;border-bottom:1px solid var(--line);} .content{padding:18px;}}
+  ul.disc{padding-left:18px;} ul.disc li{margin:3px 0;font-size:13px;color:#475569;}
+  label.ck{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:#334155;padding:4px 0;}
+  /* wizard */
+  .wzbar{position:sticky;top:0;background:var(--bg);padding-bottom:10px;z-index:2;}
+  .wzbar .top{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-bottom:8px;}
+  .wztrack{height:6px;background:#e2e8f0;border-radius:999px;overflow:hidden;}
+  .wztrack > div{height:6px;background:#00857a;border-radius:999px;transition:width .25s;}
+  .wzfoot{display:flex;justify-content:space-between;gap:8px;margin-top:24px;padding-top:16px;border-top:1px solid var(--line);}
+  .bubble{background:#fff;border:1px solid var(--line);border-radius:14px;border-top-left-radius:4px;padding:14px;font-size:13px;white-space:pre-wrap;line-height:1.7;}
+  .big{font-size:18px;font-weight:600;}
+  .lead{font-size:14px;color:#334155;line-height:1.7;}
+  .dots{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px;}
+  .dotstep{width:9px;height:9px;border-radius:50%;background:#cbd5e1;}
+  .dotstep.on{background:#00857a;} .dotstep.done{background:#0f172a;}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand"><div class="mk">하나</div><div><div class="t1">하나 AI에이전트 도우미</div><div class="t2">업무 에이전트를 만들어주는 도우미</div></div></div>
+    <nav id="nav"></nav>
+  </aside>
+  <main>
+    <header><div class="hh">하나증권 내부 업무용 AI 에이전트 제작 플랫폼 · 데모(mock data)</div><span class="pill-c">참고용 · 투자판단은 본인 책임</span></header>
+    <div class="mobtabs" id="mobtabs"></div>
+    <div class="content"><div class="inner" id="view"></div></div>
+  </main>
+</div>
+
+<script>
+/* ===== 데이터 ===== */
+const DIVISIONS=["IB","S&T","WM","본사관리","AI디지털"];
+const AGENTS=[
+ {id:"buzz",name:"뉴스·종목 실시간 검색어 순위",en:"Market Buzz Ranking Agent",div:["S&T","WM","본사관리","AI디지털"],diff:"낮음",sens:"낮음",mvp:"매우 높음",
+  build:"오늘 시장에서 관심이 급등한 키워드·종목 순위 화면",
+  problem:"매일 아침·장중에 어떤 종목·테마·키워드가 갑자기 주목받는지 빠르게 파악해야 합니다. 뉴스·검색어·기사량·언급량으로 오늘의 관심 급등 키워드를 순위화합니다.",
+  req:["뉴스 검색 데이터","종목명·키워드 언급량","주가·거래대금 데이터"],opt:["검색 트렌드 데이터","테마 매핑 데이터"],
+  prompt:`너는 증권사 내부 Market Buzz 분석 에이전트야.
+뉴스 검색 데이터, 종목명 언급량, 검색 트렌드, 거래대금 변화를 바탕으로
+오늘 시장에서 관심도가 급등한 종목과 키워드를 순위화해줘.
+출력은 다음 형식으로 작성해줘.
+1. 급상승 키워드 순위  2. 관련 종목  3. 뉴스량 변화
+4. 검색 관심도 변화  5. 관련 테마  6. 시장 해석
+7. S&T 참고 포인트  8. WM 고객 상담용 한 줄 코멘트
+투자 매수/매도 권유 표현은 사용하지 말고, 내부 업무 참고용으로 작성해줘.
+출처명과 수집 시점을 함께 표시해줘.`,
+  bd:{역할:"증권사 내부 Market Buzz 분석 에이전트",목적:"시장 관심도 급등 키워드·종목 순위화",입력:"뉴스 검색, 종목 언급량, 검색 트렌드, 거래대금 변화",출력:"순위·관련 종목·변화율·테마·해석·본부별 코멘트",제약:"투자 권유 금지, 출처·수집 시점 표시"},
+  sec:["외부 뉴스·검색 데이터 중심이라 민감도는 낮음","고객 상담 문구가 투자 권유처럼 보이지 않게 주의","‘상승 가능성이 높다’ 같은 표현 금지","내부 업무 참고용 문구 필수"],
+  exp:["S&T 장중 브리핑 알림으로 확장","WM 상담 카드 자동 생성","관심 급등 종목 푸시 알림"],
+  ex:{type:"ranking",rows:[{k:"HBM",chg:"+240%",stocks:"SK하이닉스 · 한미반도체",note:"반도체 공급 기대 뉴스 집중"},{k:"로봇",chg:"+180%",stocks:"두산로보틱스 · 레인보우로보틱스",note:"정책·투자 확대 기대 관심 증가"},{k:"원전",chg:"+120%",stocks:"두산에너빌리티",note:"수주 보도 확산"}]},
+  result:`오늘의 시장 관심 급등 키워드 (기준 09:30 · 출처: 뉴스 검색)
+1. HBM  뉴스량 +240% · SK하이닉스, 한미반도체
+   → 반도체 공급 기대 뉴스 집중. S&T: 장중 거래대금 동반 확인 권장.
+2. 로봇  뉴스량 +180% · 두산로보틱스, 레인보우로보틱스
+   → 정책·투자 확대 기대. WM: 관심 고객 문의 대비 코멘트 준비.
+3. 원전  뉴스량 +120% · 두산에너빌리티 → 수주 보도 확산.
+※ 내부 업무 참고용이며 투자 권유가 아닙니다.`},
+ {id:"competitor",name:"경쟁사 이벤트·실적·서비스 동향",en:"Brokerage Competitor Radar Agent",div:["본사관리","AI디지털","WM"],diff:"보통",sens:"보통",mvp:"매우 높음",
+  build:"경쟁사 이벤트·수수료·신규 서비스 동향과 자사 대응 포인트 화면",
+  problem:"경쟁사의 이벤트·수수료 혜택·신규 서비스·실적·앱 업데이트를 지속 파악해야 합니다. 공개 데이터를 모아 경쟁사 동향을 요약하고 자사 대응 필요도를 판단합니다.",
+  req:["증권사 공식 이벤트 페이지","뉴스 검색 데이터","공시 데이터"],opt:["앱 업데이트 정보","IR 자료","보도자료"],
+  prompt:`너는 증권사 경쟁사 동향 분석 에이전트야.
+경쟁 증권사의 이벤트, 수수료 혜택, 신규 서비스, 공시, 실적, 보도자료, 앱 업데이트를
+바탕으로 최근 경쟁사 동향을 요약해줘.
+출력: 1. 동향 요약  2. 증권사별 변화  3. 상품군 경쟁 강도
+4. 공격성 점수  5. 자사 영향도  6. 고객 이탈 위험 영역
+7. 추천 대응 액션  8. 경영진 보고용 한 줄 요약
+출처와 수집 시점을 표시하고, 추정 내용은 반드시 '추정'이라고 표시해줘.
+투자 권유나 특정 회사 비방 표현은 사용하지 말고 내부 전략 참고용으로 작성해줘.`,
+  bd:{역할:"증권사 경쟁사 동향 분석 에이전트",목적:"경쟁사 변화 요약 및 자사 대응 포인트 도출",입력:"이벤트 페이지, 공시, 뉴스, 보도자료, 앱 업데이트",출력:"동향 요약·공격성 점수·경쟁 강도·대응 액션",제약:"출처·추정 표시, 비방 금지, 내부 전략 참고용"},
+  sec:["공식 공개 데이터 중심으로만 수집","유료 기사 전문·로그인 필요 페이지 수집 금지","경쟁사 평가는 객관적 지표 기반","추정과 사실을 구분해 표시"],
+  exp:["월간 경쟁사 리포트 자동 생성","수수료 변화 알림","마케팅 캠페인 아이디어 제안"],
+  ex:{type:"competitor",rows:[{co:"키움증권",move:"수수료 무료 이벤트 강화",score:88,impact:"높음"},{co:"토스증권",move:"첫 거래 리워드 확대",score:92,impact:"신규·MZ 고객"},{co:"미래에셋증권",move:"환전 우대 집중",score:74,impact:"대응: 환전 우대 검토"}]},
+  result:`경쟁사 동향 요약 (최근 7일 · 출처: 공식 이벤트 페이지·뉴스)
+- 토스증권: 첫 거래 리워드 확대 (공격성 92) → 신규·MZ 고객 영향. (추정 포함)
+- 키움증권: 수수료 무료 이벤트 강화 (공격성 88).
+- 미래에셋: 환전 우대 집중. 자사 대응: 환전 우대/입고 이벤트 검토.
+경영진 보고용 한 줄: 신규고객 유치 경쟁이 리워드 중심으로 가열.
+※ 비방 없는 내부 전략 참고용.`},
+ {id:"theme",name:"테마 과열도 분석",en:"Theme Heat Radar Agent",div:["S&T","WM","리서치","본사관리"],diff:"보통",sens:"낮음",mvp:"매우 높음",
+  build:"오늘 과열된 테마 순위와 과열 단계 화면",
+  problem:"특정 테마가 단기 급등·과열되는 경우가 많습니다. 뉴스량·관련주 수익률·거래대금·검색 관심도를 종합해 테마 과열도를 산출합니다.",
+  req:["뉴스 검색 데이터","주가 데이터","거래대금 데이터","종목-테마 매핑 데이터"],opt:["검색 트렌드 데이터","수급 데이터"],
+  prompt:`너는 증권사 Theme Heat Radar 에이전트야.
+뉴스량 변화, 관련 종목 평균 수익률, 거래대금 변화, 검색 관심도, 테마별 종목 매핑을
+바탕으로 오늘 과열된 테마를 분석해줘.
+출력: 1. 과열 테마 TOP 10  2. 과열 점수  3. 뉴스량 변화
+4. 관련주 평균 수익률  5. 거래대금 변화  6. 주도 종목
+7. 과열 판단 근거  8. S&T 모니터링 포인트  9. WM 상담 유의 문구
+매수/매도 추천 표현은 쓰지 말고, 단기 변동성·리스크 유의 문구를 포함하고
+데이터 출처와 기준 시점을 표시해줘.`,
+  bd:{역할:"Theme Heat Radar 에이전트",목적:"시장 과열 테마 탐지",입력:"뉴스량, 주가 수익률, 거래대금, 검색 관심도, 테마 매핑",출력:"TOP 10·점수·변화율·근거·본부별 코멘트",제약:"매매 추천 금지, 리스크 유의, 출처·기준 시점 표시"},
+  sec:["과열도는 투자 추천이 아니라 모니터링 지표로 표현","‘매수 기회’ 대신 ‘관찰 필요’·‘변동성 유의’ 사용","관련 종목은 예시·연관 종목으로 표시"],
+  exp:["장중 과열 알림","테마 로테이션 추적","WM 고객 설명 카드 자동 생성"],
+  ex:{type:"themeHeat",rows:[{theme:"AI 반도체",score:91,status:"과열",news:"+180%",ret:"+5.8%",val:"+240%",lead:"SK하이닉스 · 한미반도체"}]},
+  result:`과열 테마 TOP 3 (기준 09:30)
+1. AI 반도체  과열점수 91/100 (과열)
+   뉴스 +180% · 관련주 +5.8% · 거래대금 +240% · 주도 SK하이닉스
+   근거: 뉴스·거래대금 동반 급증. 단기 변동성 유의.
+2. 원전 73 (과열)   3. 2차전지 71 (과열)
+S&T 모니터링: 거래대금 급증 지속 여부 확인.
+WM 유의: ‘과열=관찰 필요’로 안내, 매수 추천 아님.`},
+ {id:"deal",name:"공시 분석 기반 딜 기회 탐지",en:"Deal Opportunity Radar Agent",div:["IB","리서치"],diff:"높음",sens:"보통",mvp:"높음",
+  build:"공시·재무·뉴스로 딜 가능성이 있는 기업을 선별한 후보 화면",
+  problem:"IB는 공시·뉴스로 자금조달·IPO·M&A·회사채·CB/BW 가능성을 조기에 탐지해야 합니다. 공개 공시·재무·주가·뉴스를 분석해 딜 후보 기업과 예상 딜 유형을 정리합니다.",
+  req:["DART 공시 데이터","재무 요약 데이터","뉴스 검색 데이터"],opt:["주가 데이터","과거 유사 딜 사례 데이터","Peer group 데이터"],
+  prompt:`너는 증권사 IB 본부의 Deal Opportunity 분석 에이전트야.
+DART 공시, 재무정보, 주요사항보고서, 증권신고서, 뉴스, 주가 흐름을 바탕으로
+딜 가능성이 있는 기업을 탐지해줘.
+출력: 1. 기업명  2. 최근 공시/뉴스 요약  3. 재무적 신호
+4. 주가·시장 반응  5. 예상 딜 유형(IPO·유상증자·회사채·CB/BW·M&A·제휴)
+6. 딜 가능성 점수  7. 판단 근거  8. 담당자 검토 필요 여부  9. 피치 포인트
+출처를 표시하고 불확실한 내용은 '가능성'·'추정'으로 표현해줘.
+투자 권유나 미공개정보 활용으로 오해될 표현은 사용하지 마.`,
+  bd:{역할:"IB Deal Opportunity 분석 에이전트",목적:"공시·뉴스 기반 딜 가능성 탐지",입력:"DART 공시, 재무정보, 뉴스, 주가, 유사 딜 사례",출력:"기업명·신호·딜 유형·점수·근거·검토 필요 여부",제약:"출처·추정 표시, 미공개정보 활용 금지, 투자 권유 금지"},
+  sec:["공개 공시·공개 뉴스 기반 분석으로 한정","미공개정보·루머·내부자 정보 사용 금지","딜 가능성은 확정이 아니라 ‘검토 후보’로 표현","IB 내부 검토 전 외부 공유 금지 문구 표시"],
+  exp:["만기 도래 CB/BW 모니터링","Peer group 비교","피치 자료 초안 자동 생성"],
+  ex:{type:"deal",corp:"A바이오 (샘플)",signals:["현금성 자산 감소","R&D 비용 증가","CB 만기 8개월 전","임상 뉴스 증가","주가 30일 +38%"],deals:[{t:"유상증자 가능성",s:78},{t:"CB/BW 발행 가능성",s:72},{t:"기술이전·전략적 제휴",s:61}]},
+  result:`딜 발굴 후보 (공시 기반 · 출처: DART)
+A바이오(샘플) — 유상증자 결정
+  신호: 현금성 자산 감소 · CB 만기 8개월 · R&D 비용 증가
+  예상 딜: 유상증자 가능성(78) / CB·BW(72) — 모두 ‘가능성’
+  검토 필요: ECM 담당자. 피치 포인트: 자금 사용처·만기 구조.
+※ 투자 권유/종목 추천 아님 · 미공개정보 미사용 · IB 내부 검토 전 외부 공유 금지.`},
+ {id:"timeline",name:"종목 뉴스 타임라인",en:"Stock Event Timeline Agent",div:["WM","S&T","리서치","AI디지털"],diff:"보통",sens:"낮음",mvp:"높음",
+  build:"한 종목이 왜 움직였는지 뉴스·공시·주가를 날짜순으로 엮은 화면",
+  problem:"‘이 종목이 왜 올랐고 왜 빠졌는지’ 빠르게 파악하기 어렵습니다. 특정 종목의 뉴스·공시·실적·정책 이슈와 주가 반응을 날짜순으로 연결해 스토리처럼 설명합니다.",
+  req:["뉴스 검색 데이터","공시 데이터","주가 데이터"],opt:["거래대금 데이터","리서치 리포트 요약","시장 지수 데이터"],
+  prompt:`너는 증권사 Stock Event Timeline 에이전트야.
+특정 종목의 뉴스, 공시, 실적, 정책 이슈와 주가 반응을 날짜순으로 연결해
+이 종목이 왜 움직였는지 설명해줘.
+출력: 1. 종목명  2. 기간  3. 이벤트 타임라인
+4. 이벤트별 주가 반응(당일·1일·3일 후)  5. 거래대금 변화
+6. 이벤트 성격(긍정·부정·중립)  7. 움직임 요약  8. PB 상담 코멘트  9. 리스크 유의
+매수/매도 권유 표현은 쓰지 말고, 뉴스·공시 출처와 주가 기준 시점을 표시해줘.`,
+  bd:{역할:"Stock Event Timeline 에이전트",목적:"뉴스·공시와 주가 반응 연결",입력:"종목 뉴스, 공시, 주가, 거래대금, 실적 이벤트",출력:"타임라인·반응률·해석·상담 코멘트·리스크 유의",제약:"매매 권유 금지, 출처·기준 시점 표시"},
+  sec:["고객 상담용 문구는 참고용으로만 제공","특정 종목 추천처럼 보이는 표현 금지","과거 이벤트·과거 주가 반응을 설명하는 방식으로 제한","예측 표현은 신중하게 사용"],
+  exp:["PB 상담 카드 자동 생성","리서치 메모 초안","고객 보유 종목 자동 타임라인(내부망 연결 시)"],
+  ex:{type:"timeline",corp:"네이버",rows:[{date:"2026-06-03",ev:"AI 서비스 고도화 발표",d0:"+3.2%",d3:"+4.7%",tone:"긍정",note:"AI 기대감으로 투자심리 개선"},{date:"2026-06-10",ev:"플랫폼 규제 이슈 보도",d0:"-2.4%",d3:"-1.1%",tone:"부정",note:"규제 리스크 부각으로 단기 조정"}]},
+  result:`네이버 — 최근 이벤트 타임라인 (출처: 뉴스·공시 · 주가 종가 기준)
+06-03 AI 서비스 고도화 발표 | 당일 +3.2% · 3일 +4.7% (긍정)
+06-10 플랫폼 규제 이슈 보도 | 당일 -2.4% · 3일 -1.1% (부정)
+요약: AI 기대감 → 규제 리스크로 단기 조정.
+PB 코멘트(참고용): 최근 변동은 이슈성. 매매 권유 아님.`},
+];
+const CAN_DO=[["업무 아이디어 정리","“WM 고객 상담 에이전트를 만들고 싶은데 구조를 잡아줘.”"],["프롬프트 초안 작성","“아래 업무 목적에 맞는 에이전트 프롬프트를 작성해줘.”"],["대시보드 화면 설계","“이 에이전트 결과를 볼 대시보드 화면 구성을 제안해줘.”"],["데이터 항목 정리","“이 에이전트에 필요한 데이터 항목을 표로 정리해줘.”"],["보안/준법 체크","“이 프롬프트에 개인정보·투자권유 위험이 있는지 점검해줘.”"],["더 좋은 프롬프트로 개선","“아래 프롬프트를 더 구체적이고 안전하게 개선해줘.”"]];
+const FORMULA=["너는 어떤 역할인지 말하기","내가 만들고 싶은 업무도구 설명하기","사용할 데이터 말하기","원하는 결과물 형식 말하기","하지 말아야 할 것 말하기","예시가 있으면 같이 주기"];
+const CHECKLIST=["AI의 역할을 지정했나요?","해결하려는 업무 문제가 명확한가요?","입력 데이터가 구체적인가요?","원하는 출력 형식을 지정했나요?","금지 표현·제약조건을 넣었나요?","출처 표시 조건을 넣었나요?","투자 권유처럼 보이는 표현을 막았나요?","개인정보·고객정보 사용 여부를 확인했나요?","내부 업무 참고용 문구를 포함했나요?"];
+const TERMS=[["API","다른 서비스의 데이터를 자동으로 받아오는 ‘창구’. 예: 뉴스 API = 뉴스를 자동으로 가져오는 창구."],["Endpoint","그 창구의 정확한 ‘주소’. 어디로 요청을 보내면 되는지."],["Schema","받아온 데이터가 ‘어떤 칸으로 구성돼 있는지’ 정한 표."],["인증키(API Key)","그 창구를 쓸 수 있게 해주는 ‘출입증’. 보통 무료로 발급."]];
+const PRESETS=[
+ {m:["공모주","청약","ipo"],bp:{name:"IPO Subscription Support Agent",one:"공모주 청약 일정·환불·상장·예상 문의를 한눈에 정리해 상담을 돕는 에이전트",users:["WM","고객센터","본사관리"],problem:"공모주 청약 일정·환불일·상장일·예상 고객 문의를 한눈에 정리해 상담 대응을 돕습니다.",data:["IPO 일정 데이터","증권신고서·투자설명서","청약 경쟁률","뉴스","고객 FAQ"],inputs:["조회 기간","관심 종목군"],outputs:["이번 주 공모주 일정","청약·환불·상장 D-Day","예상 문의 TOP 5","상담 답변 초안","유의사항"],screen:["주간 일정 캘린더","D-Day 카드","예상 문의 리스트"],diff:"보통",api:["IPO 일정(공개)","DART 증권신고서","뉴스 검색 API"]}},
+ {m:["경쟁사 앱","앱 업데이트","신규 기능","앱스토어"],bp:{name:"Competitor App Tracker Agent",one:"경쟁사 앱의 업데이트·신규 기능을 추적해 자사 대응 포인트를 정리하는 에이전트",users:["AI디지털","본사관리","마케팅"],problem:"경쟁사 앱의 버전 업데이트·신규 기능을 추적해 자사 기획 대응 타이밍을 잡습니다.",data:["앱스토어 공개 업데이트","경쟁사 공지","뉴스"],inputs:["관찰 대상 앱","기간"],outputs:["앱별 업데이트 요약","신규 기능 목록","자사 대비 격차","추천 대응 액션"],screen:["업데이트 타임라인","기능 비교 표","대응 액션 리스트"],diff:"보통",api:["앱스토어 공개 정보","뉴스 검색 API"]}},
+ {m:["공시","딜","ib"],bp:{name:"Deal Opportunity Radar Agent",one:"오늘 공시 중 딜 가능성이 있는 기업만 골라 검토 후보로 정리하는 에이전트",users:["IB","리서치"],problem:"당일 공시에서 유상증자·합병·대규모 투자 신호를 가진 기업을 골라 딜 검토 후보로 정리합니다.",data:["DART 공시","재무 요약","뉴스"],inputs:["탐지 섹터","기간","딜 유형 범위"],outputs:["딜 후보 기업","예상 딜 유형","딜 가능성 점수(참고)","판단 근거","검토 필요 여부"],screen:["딜 후보 테이블","공시 유형 필터","근거 패널"],diff:"높음",api:["DART 공시 OpenAPI","뉴스 검색 API"]}},
+];
+function genericBP(idea,div){return {name:"맞춤 업무 에이전트 (초안)",one:idea.trim()?`“${idea.trim()}” 를 돕는 업무 보조 에이전트`:"업무 보조 에이전트",users:div?[div]:["담당 본부"],problem:idea.trim()||"입력한 업무를 자동으로 정리·요약해 담당자의 판단을 돕습니다.",data:["뉴스 검색 데이터","공시 데이터","주가/거래대금 데이터"],inputs:["조회 기간","관심 대상"],outputs:["핵심 요약","관련 항목 리스트","본부별 참고 코멘트","유의사항"],screen:["요약 카드","핵심 리스트 표","상세 패널"],diff:"보통",api:["뉴스 검색 API","DART 공시","주가 데이터"]};}
+function buildBP(idea,div){const low=(idea||"").toLowerCase();for(const p of PRESETS){if(p.m.some(m=>low.includes(m.toLowerCase())))return p.bp;}return genericBP(idea,div);}
+function makePrompt(bp){return `너는 하나증권 내부 ${bp.users.join("·")} 업무를 돕는 에이전트야.
+${bp.problem}
+사용 데이터: ${bp.data.join(", ")}.
+출력은 다음 순서로 작성해줘.
+${bp.outputs.map((o,i)=>`${i+1}. ${o}`).join("\n")}
+매수/매도 권유 표현은 쓰지 말고 내부 업무 참고용으로 작성하고, 출처·수집 시점을 표시하고 불확실한 내용은 '추정'으로 표시해줘.`;}
+
+/* ===== helpers ===== */
+const esc=s=>(s+"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const pill=(t,c="slate")=>`<span class="pill p-${c}">${t}</span>`;
+const diffTone=d=>d==="낮음"?"emerald":d==="보통"?"amber":"red";
+const codebox=(label,text)=>`<div class="codebox"><div class="ph"><span>${label}</span><button class="cp" onclick="cpFrom(this)">복사</button></div><pre>${esc(text)}</pre></div>`;
+function cpFrom(b){const pre=b.closest(".codebox").querySelector("pre");navigator.clipboard.writeText(pre.innerText).then(()=>{b.textContent="복사됨";setTimeout(()=>b.textContent="복사",1200);}).catch(()=>{});}
+const secT=(n,t)=>`<div class="sec">${n?`<span class="stnum">${n}</span>`:""}<h3>${t}</h3></div>`;
+function examplePreview(ex){
+ const frame=inner=>`<div class="frame"><div class="bar"><span class="dot" style="background:#f87171"></span><span class="dot" style="background:#fbbf24"></span><span class="dot" style="background:#34d399"></span><span class="muted" style="font-size:11px;margin-left:6px">완성 예시 미리보기</span></div><div class="bd">${inner}</div></div>`;
+ if(!ex)return "";
+ if(ex.type==="ranking")return frame(ex.rows.map((r,i)=>`<div style="display:flex;gap:12px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:8px"><span class="mono" style="font-weight:700">${i+1}</span><div><div style="display:flex;gap:8px;align-items:center"><b style="font-size:13px">${r.k}</b>${pill("뉴스 "+r.chg,"red")}</div><div class="muted" style="font-size:12px;margin-top:2px">관련 종목 · ${r.stocks}</div><div class="muted" style="font-size:12px">${r.note}</div></div></div>`).join(""));
+ if(ex.type==="competitor")return frame(ex.rows.map(r=>`<div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:8px"><div style="display:flex;justify-content:space-between"><b style="font-size:13px">${r.co}</b>${pill("공격성 "+r.score,"amber")}</div><div class="muted" style="font-size:12px;margin-top:4px">${r.move}</div><div class="muted" style="font-size:12px">영향 · ${r.impact}</div></div>`).join(""));
+ if(ex.type==="themeHeat"){const r=ex.rows[0];return frame(`<div style="background:#fff;border:1px solid #fecaca;border-radius:10px;padding:14px"><div style="display:flex;justify-content:space-between"><b style="font-size:13px">${r.theme}</b>${pill(r.status,"red")}</div><div style="font-size:24px;font-weight:700;margin-top:4px">${r.score}<span class="muted" style="font-size:11px"> / 100</span></div><div class="grid g3" style="margin-top:10px;text-align:center"><div style="background:#f8fafc;border-radius:8px;padding:8px"><div class="muted" style="font-size:11px">뉴스량</div><div style="font-size:13px;font-weight:600">${r.news}</div></div><div style="background:#f8fafc;border-radius:8px;padding:8px"><div class="muted" style="font-size:11px">관련주 수익</div><div style="font-size:13px;font-weight:600;color:var(--emerald)">${r.ret}</div></div><div style="background:#f8fafc;border-radius:8px;padding:8px"><div class="muted" style="font-size:11px">거래대금</div><div style="font-size:13px;font-weight:600">${r.val}</div></div></div><div class="muted" style="font-size:12px;margin-top:8px">주도 종목 · ${r.lead}</div></div>`);}
+ if(ex.type==="deal")return frame(`<div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px"><b style="font-size:13px">기업 · ${ex.corp}</b><div style="margin-top:8px"><div class="muted" style="font-size:11px;margin-bottom:4px">탐지 근거</div><div style="display:flex;flex-wrap:wrap;gap:4px">${ex.signals.map(s=>`<span style="background:#f1f5f9;border-radius:6px;padding:2px 7px;font-size:11px;color:#475569">${s}</span>`).join("")}</div></div><div style="margin-top:10px">${ex.deals.map(d=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span class="muted" style="font-size:12px;width:150px">${d.t}</span><div class="bar2" style="flex:1"><div style="width:${d.s}%"></div></div><span class="mono muted" style="font-size:11px;width:26px;text-align:right">${d.s}</span></div>`).join("")}</div><div style="margin-top:10px;background:var(--amber-bg);border:1px solid #fcd34d;border-radius:8px;padding:8px;font-size:12px;color:var(--amber)">참고용 · 투자 권유/종목 추천 아님 · 담당자 검토 필요</div></div>`);
+ if(ex.type==="timeline")return frame(`<div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px"><b style="font-size:13px">${ex.corp}</b><div style="border-left:1px solid var(--line);padding-left:16px;margin-top:12px">${ex.rows.map(r=>`<div style="position:relative;margin-bottom:14px"><span style="position:absolute;left:-21px;top:3px;width:10px;height:10px;border-radius:50%;background:${r.tone==="긍정"?"#10b981":r.tone==="부정"?"#ef4444":"#94a3b8"}"></span><div style="display:flex;gap:8px;align-items:center"><span class="mono muted" style="font-size:11px">${r.date}</span><span style="font-size:13px">${r.ev}</span></div><div class="muted" style="font-size:12px;margin-top:2px">당일 ${r.d0} · 3일 후 ${r.d3} · ${r.note}</div></div>`).join("")}</div></div>`);
+ return "";
+}
+function buildScreenPrompt(t){return `이 프로젝트에 '${t.name}' 대시보드 화면을 만들어줘.
+- 보여줄 것: ${t.bd.출력}
+- 적당한 샘플(mock) 데이터도 함께 만들어줘
+- 투자권유 표현 금지, "참고용 · 투자판단은 본인 책임" 문구 포함
+- 만든 파일 목록과 확인 방법(npm run dev)을 알려줘.`;}
+
+const SOURCES={
+ naver:{name:"네이버 뉴스 검색 API",free:"무료 · 일 25,000건",
+  get:"developers.naver.com → 애플리케이션 등록 → ‘검색’ 사용 → Client ID·Secret 발급",
+  env:"NAVER_CLIENT_ID=발급받은_ID\nNAVER_CLIENT_SECRET=발급받은_Secret",
+  req:"GET https://openapi.naver.com/v1/search/news.json?query=삼성전자&display=20&sort=date\n\n[요청 헤더]\nX-Naver-Client-Id: 발급ID\nX-Naver-Client-Secret: 발급Secret",
+  sample:`{
+  "total": 20431,
+  "items": [
+    { "title": "<b>삼성전자</b> HBM 공급 확대 기대",
+      "originallink": "https://...",
+      "pubDate": "Fri, 13 Jun 2025 09:10:00 +0900",
+      "description": "..." }
+  ]
+}`,
+  transform:"items 의 title(HTML 태그 제거)·pubDate 로 키워드별 기사 수·시점을 집계 → 뉴스량 변화율 계산"},
+ dart:{name:"DART 전자공시 OpenAPI",free:"무료",
+  get:"opendart.fss.or.kr → 인증키 신청(이메일 인증) → 마이페이지에서 40자 인증키 복사",
+  env:"DART_API_KEY=발급받은_40자_인증키",
+  req:"GET https://opendart.fss.or.kr/api/list.json\n  ?crtfc_key=인증키\n  &bgn_de=20250610&end_de=20250613\n  &pblntf_ty=B   (B=주요사항보고서, C=발행공시)\n\n[요청 헤더] 없음 — 인증키는 쿼리 파라미터로 전달",
+  sample:`{
+  "status": "000", "message": "정상",
+  "list": [
+    { "corp_name": "A소재",
+      "report_nm": "주요사항보고서(유상증자결정)",
+      "rcept_no": "20250613000123",
+      "rcept_dt": "20250613" }
+  ]
+}`,
+  transform:"report_nm 을 규칙으로 분류(유상증자→자금조달 니즈 / 합병→자문 기회) → 딜 시그널 라벨 부여"},
+ kis:{name:"한국투자증권(KIS) OpenAPI",free:"무료(계좌 필요)",
+  get:"apiportal.koreainvestment.com → 앱 등록 → App Key·App Secret 발급. 처음엔 모의투자(vts)로 테스트 권장",
+  env:"KIS_APP_KEY=앱키\nKIS_APP_SECRET=앱시크릿\nKIS_ENV=vts   (vts=모의 / prod=실전)",
+  req:"① 토큰 발급 (약 24시간 유효)\nPOST https://openapivts.koreainvestment.com:29443/oauth2/tokenP\n\n② 거래량 순위 조회\nGET /uapi/domestic-stock/v1/quotations/volume-rank\n[헤더] authorization: Bearer {token} · appkey · appsecret · tr_id: FHPST01710000",
+  sample:`{
+  "rt_cd": "0",
+  "output": [
+    { "hts_kor_isnm": "SK하이닉스",
+      "mksc_shrn_iscd": "000660",
+      "data_rank": "1",
+      "acml_vol": "12400000",
+      "prdy_ctrt": "3.5" }
+  ]
+}`,
+  transform:"output 의 거래량(acml_vol)·등락률(prdy_ctrt) 을 종목→테마로 묶어 과열점수 계산에 사용"}
+};
+const AGENT_APIS={buzz:["naver","kis"],competitor:["naver","dart"],theme:["kis","naver"],deal:["dart"],timeline:["naver","dart","kis"]};
+function renderSource(k){const s=SOURCES[k];return `
+ <div class="card pad" style="margin-bottom:12px">
+  <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:13px">${s.name}</b>${pill(s.free,"emerald")}</div>
+  <ol style="margin:10px 0 0 18px;font-size:13px;line-height:1.7;color:#334155">
+   <li><b>인증키(출입증) 발급</b><div class="muted" style="font-size:12px">${s.get}</div></li>
+   <li style="margin-top:10px"><b>설정 파일(.env)에 키 넣기</b>${codebox(".env",s.env)}</li>
+   <li style="margin-top:10px"><b>데이터 호출</b>${codebox("요청",s.req)}</li>
+   <li style="margin-top:10px"><b>이렇게 응답이 와요</b>${codebox("응답 예시 (JSON)",s.sample)}</li>
+   <li style="margin-top:10px"><b>화면 데이터로 변환</b><div class="muted" style="font-size:12px">${s.transform}</div></li>
+  </ol>
+ </div>`;}
+
+/* 빌드 대상 정규화 (예시 에이전트 또는 내 아이디어 설계서) */
+function target(){
+ if(state.agent){const a=AGENTS.find(x=>x.id===state.agent);return {...a,buildPrompt:buildScreenPrompt(a),apis:AGENT_APIS[a.id]||["naver","dart"]};}
+ const bp=state.bp;const t={name:bp.name,problem:bp.problem,ex:null,req:bp.data,opt:[],prompt:makePrompt(bp),bd:{역할:bp.users.join("·")+" 업무 보조 에이전트",목적:bp.one,입력:bp.data.join(", "),출력:bp.outputs.join(", "),제약:"투자권유 금지·출처/추정 표시"},sec:["외부 공개 데이터만 사용","고객정보·미공개정보 사용 금지","내부 업무 참고용 문구 포함","운영 전 준법 검토"],exp:["알림·자동화로 확장","사내 용어·종목 유니버스로 맞춤"],api:bp.api,apis:["naver","dart"],result:`(예시 결과) ${bp.outputs.join(" / ")}\n→ 항목별로 정리되어 표시됩니다. 출처·수집 시점 포함. 투자 권유 아님.`};t.buildPrompt=buildScreenPrompt(t);return t;}
+
+/* ===== 위저드 ===== */
+const WZ=[
+ {t:"시작",s:"코드는 한 줄도 안 칩니다"},
+ {t:"무엇을 해결하나요",s:"이 에이전트가 푸는 문제"},
+ {t:"완성하면 이렇게 보여요",s:"우리가 만들 목표"},
+ {t:"필요한 재료",s:"어떤 데이터를 쓰나요"},
+ {t:"이렇게 요청해요",s:"Claude에 붙여넣을 프롬프트"},
+ {t:"직접 돌려보기",s:"붙여넣으면 이런 결과가"},
+ {t:"화면으로 만들기",s:"Claude Code로 대시보드"},
+ {t:"진짜 데이터 연결",s:"mock → 실데이터"},
+ {t:"보안 체크 & 완성",s:"확인하고 마무리"},
+];
+function wizard(){
+ const T=target();const i=state.step;const meta=WZ[i];
+ const dots=WZ.map((_,k)=>`<span class="dotstep ${k<i?"done":k===i?"on":""}"></span>`).join("");
+ const foot = i<WZ.length-1
+   ? `<div class="wzfoot"><button class="btn btn-ghost" onclick="wzPrev()" ${i===0?'style="visibility:hidden"':""}>← 이전</button><button class="btn btn-indigo btn-lg" onclick="wzNext()">${i===0?"시작하기 →":"다음 →"}</button></div>`
+   : `<div class="wzfoot"><button class="btn btn-ghost" onclick="wzPrev()">← 이전</button><div style="display:flex;gap:8px"><button class="btn btn-ghost" onclick="goto('agents')">다른 에이전트 만들기</button><button class="btn btn-dark" onclick="goto('home')">처음으로</button></div></div>`;
+ return `
+  <div class="wzbar"><div class="top"><span>STEP ${i+1} / ${WZ.length} · ${T.name}</span><button class="chip" onclick="goto('agents')">그만두기</button></div><div class="wztrack"><div style="width:${(i+1)/WZ.length*100}%"></div></div><div class="dots">${dots}</div></div>
+  <div style="margin-top:18px"><div class="big">${meta.t}</div><div class="muted" style="font-size:13px;margin-top:2px">${meta.s}</div></div>
+  <div style="margin-top:16px">${wzBody(i,T)}</div>
+  ${foot}`;
+}
+function wzBody(i,T){
+ if(i===0)return `<div class="lead">‘<b>${T.name}</b>’ 에이전트를 함께 만들어 볼게요.<br>코드는 한 줄도 안 칩니다. 아래 9단계를 천천히 넘기기만 하면 됩니다.</div>
+  <div class="card pad" style="margin-top:14px">이 흐름을 끝내면 가질 수 있는 것<ul class="disc" style="margin-top:6px"><li>Claude에 바로 붙여넣는 <b>완성된 프롬프트</b></li><li>붙여넣었을 때 <b>실제로 나오는 결과</b> 확인</li><li>결과를 보여주는 <b>대시보드 화면</b>을 만드는 방법</li><li>진짜 데이터로 바꾸는 <b>연결 방법</b>과 준법 체크</li></ul></div>
+  <div class="card pad" style="margin-top:12px;background:var(--emerald-bg);border-color:#a7f3d0;font-size:13px;color:#065f46">걱정 마세요 — 전부 외부 공개 데이터(뉴스·공시·주가)만 쓰고, 고객정보는 필요 없습니다.</div>`;
+ if(i===1)return `<div class="card pad"><div class="lead">${T.problem}</div></div>
+  <div class="muted" style="font-size:13px;margin-top:12px">👉 그래서 이 에이전트가 매일 대신 정리해 줍니다. 다음 단계에서 ‘완성하면 어떻게 보이는지’ 먼저 볼게요.</div>`;
+ if(i===2)return `<div class="lead" style="margin-bottom:12px">다 만들면 이런 화면이 됩니다. 우리가 만들 <b>목표</b>예요.</div>${examplePreview(T.ex)||`<div class="card pad">출력 항목 · ${T.bd.출력}</div>`}`;
+ if(i===3)return `<div class="lead">이 에이전트에 필요한 ‘재료(데이터)’입니다. 전부 인터넷에서 받는 <b>공개 데이터</b>예요.</div>
+  <div class="card pad" style="margin-top:12px"><div class="muted" style="font-size:12px;margin-bottom:4px">꼭 필요한 데이터</div><div style="display:flex;gap:6px;flex-wrap:wrap">${T.req.map(d=>pill(d,"emerald")).join("")}</div>${T.opt.length?`<div class="muted" style="font-size:12px;margin:10px 0 4px">있으면 더 좋은 데이터</div><div style="display:flex;gap:6px;flex-wrap:wrap">${T.opt.map(d=>pill(d)).join("")}</div>`:""}</div>
+  <div class="muted" style="font-size:12px;margin-top:10px">지금은 데이터 없이 ‘샘플’로 먼저 만들고, 8단계에서 진짜 데이터로 바꿉니다.</div>`;
+ if(i===4)return `<div class="lead">아래 글을 <b>복사</b>해서 Claude 채팅창에 붙여넣기만 하면 됩니다. 이게 ‘프롬프트’예요.</div>
+  <div style="margin-top:12px">${codebox("이 프롬프트를 복사하세요",T.prompt)}</div>
+  <div class="card pad" style="margin-top:12px"><div class="muted" style="font-size:12px;margin-bottom:6px">왜 이렇게 썼나요 (5요소)</div><div style="font-size:12px;line-height:1.9"><div><span class="muted">역할</span> · ${T.bd.역할}</div><div><span class="muted">목적</span> · ${T.bd.목적}</div><div><span class="muted">입력</span> · ${T.bd.입력}</div><div><span class="muted">출력</span> · ${T.bd.출력}</div><div><span class="muted">제약</span> · ${T.bd.제약}</div></div></div>`;
+ if(i===5)return `<div class="lead">위 프롬프트를 붙여넣으면 Claude가 <b>이렇게 답해줍니다.</b> 진짜 이렇게 나와요 👇</div>
+  <div style="display:flex;gap:8px;align-items:flex-start;margin-top:14px"><div style="width:28px;height:28px;border-radius:50%;background:#00857a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">AI</div><div class="bubble" style="flex:1">${esc(T.result)}</div></div>
+  <div class="card pad" style="margin-top:12px;background:var(--indigo-bg);border-color:#c7d2fe;font-size:13px;color:#3730a3">바로 업무에 쓸 수 있죠? 이제 이 결과를 <b>매일 보는 화면</b>으로 만들어 봅니다.</div>`;
+ if(i===6)return `<div class="lead">결과를 깔끔한 <b>대시보드 화면</b>으로 만들고 싶다면, <b>Claude Code</b>라는 도구에 아래 한 단락을 붙여넣으면 됩니다. (Claude Code = 시키는 대로 화면 파일을 만들어 주는 도구)</div>
+  <div style="margin-top:12px">${codebox("Claude Code에 붙여넣기",T.buildPrompt)}</div>
+  <div class="card pad" style="margin-top:12px"><div style="font-size:13px">이렇게 하면 됩니다</div><ol style="margin:8px 0 0 18px;font-size:13px;color:#475569;line-height:1.8"><li>프로젝트 폴더에서 <span class="mono">claude</span> 실행</li><li>위 프롬프트 붙여넣기 → 화면 파일이 만들어집니다</li><li><span class="mono">npm run dev</span> 로 브라우저에서 확인</li></ol></div>
+  <div class="muted" style="font-size:12px;margin-top:8px">코드는 Claude Code가 씁니다. 직원은 붙여넣고 확인만 하면 됩니다.</div>`;
+ if(i===7)return `<div class="lead">지금까지는 ‘샘플 데이터’였어요. 이제 <b>진짜 데이터로 바꾸는 실제 방법</b>입니다. 화면 코드는 손대지 않습니다.</div>
+  <div class="card pad" style="margin-top:12px;background:var(--indigo-bg);border-color:#c7d2fe"><div style="font-size:13px;font-weight:600;color:#3730a3">연동 공통 4단계</div><ol style="margin:8px 0 0 18px;font-size:13px;color:#3730a3;line-height:1.8"><li>인증키(출입증) 발급 — 보통 무료</li><li>설정 파일(.env)에 키 넣기</li><li>‘어댑터’가 그 창구에서 데이터를 받아옴 (Claude Code가 만들어 줌)</li><li><span class="mono">DATA_SOURCE=live</span> 한 줄로 샘플 → 진짜 데이터 전환</li></ol></div>
+  <div class="sec"><h3>이 에이전트가 연결할 데이터 창구 — 단계별 실제 방법</h3></div>
+  ${T.apis.map(renderSource).join("")}
+  <div class="card pad" style="margin-top:4px"><div class="muted" style="font-size:12px;margin-bottom:6px">‘어댑터’가 뭔가요?</div><div style="font-size:13px;color:#475569">화면과 데이터 창구 사이에서 ‘받아온 데이터를 화면이 쓰는 형태로 바꿔주는 작은 코드’예요. 한 번 만들어 두면 같은 화면으로 샘플·실데이터를 모두 쓸 수 있습니다. Claude Code에게 “위 응답을 우리 화면 형식으로 바꾸는 어댑터를 만들어줘”라고 하면 만들어 줍니다.</div></div>
+  <div class="card pad" style="margin-top:10px;background:var(--amber-bg);border-color:#fcd34d;font-size:12px;color:var(--amber)">인증키는 절대 코드·외부에 노출하지 말고 .env(설정 파일)에만 보관하세요. 실데이터 적용 전 준법·정보보호 검토가 필요합니다.</div>`;
+ if(i===8)return `<div class="lead">마지막으로, 업무에 쓰기 전에 <b>준법 체크</b>만 하면 끝!</div>
+  <div class="card pad" style="margin-top:12px">${T.sec.map(s=>`<label class="ck"><input type="checkbox" checked>${s}</label>`).join("")}<label class="ck"><input type="checkbox">운영 적용 전 준법감시·정보보호 부서 검토를 받았나요?</label></div>
+  <div class="card pad" style="margin-top:14px;background:var(--emerald-bg);border-color:#a7f3d0"><div style="font-size:15px;font-weight:700;color:#065f46">🎉 완성했어요!</div><div style="font-size:13px;color:#065f46;margin-top:4px">‘${T.name}’ 에이전트의 프롬프트·화면·데이터 연결까지 따라 만들었습니다.</div><div class="muted" style="font-size:12px;margin-top:10px">다음에 할 수 있는 것</div><ul class="disc">${T.exp.map(e=>`<li>${e}</li>`).join("")}</ul><button class="btn btn-indigo" style="margin-top:10px" onclick="goto('converter')">내 업무에 맞게 변형하기 →</button></div>`;
+ return "";
+}
+function wzPrev(){if(state.step>0){state.step--;render();}}
+function wzNext(){if(state.step<WZ.length-1){state.step++;render();}}
+
+/* ===== 참고 화면 ===== */
+function home(){return `
+ <h1>업무 에이전트, 직접 만들어 보세요</h1>
+ <p class="sub">코드는 한 줄도 안 칩니다. 에이전트를 하나 고르면 9단계를 차례로 넘기며, 완성 모습 → 요청 프롬프트 → 실제 결과 → 화면 만들기 → 데이터 연결까지 따라 하게 됩니다.</p>
+ <div class="card pad" style="margin-top:18px;background:#ecfdf5;border-color:#a7f3d0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+   <div><div style="font-size:15px;font-weight:700;color:#065f46">지금 바로 시작</div><div style="font-size:13px;color:#065f46;margin-top:2px">예시 에이전트를 하나 골라 따라 만들어 보세요. 30분이면 충분합니다.</div></div>
+   <button class="btn btn-indigo btn-lg" onclick="goto('agents')">에이전트 만들기 시작 →</button>
+ </div>
+ <h2 style="margin-top:28px">따라 만들기는 이렇게 진행돼요</h2>
+ <div class="grid g3" style="margin-top:12px">${WZ.map((s,i)=>`<div class="card pad"><span class="stnum">${i+1}</span><div style="font-size:13px;font-weight:600;margin-top:8px">${s.t}</div><div class="muted" style="font-size:12px;margin-top:2px">${s.s}</div></div>`).join("")}</div>
+ <div class="card pad" style="margin-top:18px;background:var(--indigo-bg);border-color:#c7d2fe"><div style="font-size:14px;font-weight:600;color:#3730a3">5개는 ‘시작 샘플’입니다</div><p style="font-size:13px;color:#4338ca;margin-top:4px">다른 업무 아이디어를 입력하면, 같은 9단계로 따라 만들 수 있게 설계서와 프롬프트를 만들어 드립니다.</p><button class="btn btn-soft" style="margin-top:10px" onclick="goto('converter')">내 아이디어로 만들기 →</button></div>`;}
+function claude(){return `
+ <h1>Claude 시작 가이드</h1><p class="sub">처음 쓰는 직원도 업무용 에이전트 프롬프트를 만들 수 있게.</p>
+ ${secT(null,"Claude로 할 수 있는 일")}
+ <div class="grid g2">${CAN_DO.map(c=>`<div class="card pad"><div style="font-size:13px;font-weight:600">${c[0]}</div><div class="muted" style="font-size:12px;margin-top:6px;font-style:italic">${c[1]}</div></div>`).join("")}</div>
+ ${secT(null,"잘 요청하는 기본 공식")}
+ <div class="card pad"><ol style="list-style:none;padding:0">${FORMULA.map((f,i)=>`<li style="display:flex;gap:8px;align-items:center;padding:3px 0;font-size:13px"><span class="stnum" style="width:20px;height:20px;font-size:11px;background:#f1f5f9;color:#475569">${i+1}</span>${f}</li>`).join("")}</ol>
+ <div style="margin-top:12px">${codebox("예시 요청",`너는 증권사 WM 업무 에이전트 설계 전문가야.
+고객 보유 종목의 뉴스와 주가 반응을 요약해 PB가 상담 전에 볼 코멘트를 만들어주는 에이전트를 만들고 싶어.
+사용 데이터는 종목 뉴스, 공시, 주가 반응, 고객 투자성향이야.
+출력은 고객명, 보유 종목, 핵심 이슈, 상담 코멘트, 리스크 유의사항 순서로 보여줘.
+매수/매도 권유 표현은 쓰지 말고 내부 업무 참고용 문구를 포함해줘.`)}</div></div>`;}
+function promptGuide(){const FIVE=[["역할","누구처럼 일할지 — ‘너는 ~ 에이전트야’"],["업무 목적","무엇을 해결하는지 한 문장"],["입력 데이터","어떤 데이터를 쓰는지 구체적으로"],["출력 형식","결과를 어떤 순서·형태로 받을지"],["제약조건","하지 말 것 — 투자권유 금지·출처 표시 등"]];return `
+ <h1>좋은 프롬프트 작성법</h1><p class="sub">복사만 하지 말고, 왜 이렇게 쓰는지 이해하면 새 업무에도 직접 쓸 수 있습니다.</p>
+ ${secT(null,"좋은 프롬프트의 5요소")}
+ <div>${FIVE.map((f,i)=>`<div style="display:flex;gap:10px;align-items:flex-start;margin:6px 0"><span class="pill p-slate">${i+1}. ${f[0]}</span><span style="font-size:13px;color:#475569">${f[1]}</span></div>`).join("")}</div>
+ ${secT(null,"나쁜 → 좋은 프롬프트")}
+ <div class="grid g2">
+  <div class="card pad">${pill("나쁜 프롬프트","red")}<div style="margin-top:8px;background:#f1f5f9;border-radius:8px;padding:8px 10px;font-size:13px">경쟁사 이벤트 정리해줘.</div><div class="muted" style="font-size:12px;font-weight:600;margin-top:10px">왜 부족한가</div><ul class="disc"><li>어떤 경쟁사·이벤트인지 불명확</li><li>정리 기준·출력 형식이 없음</li><li>내부 참고용 제약조건이 없음</li></ul></div>
+  <div class="card pad">${pill("개선 프롬프트","emerald")}<div style="margin-top:8px">${codebox("개선 예시",`너는 증권사 본사관리 부서의 경쟁사 이벤트 분석 에이전트야.
+국내 주요 증권사의 공식 이벤트 페이지·뉴스·공시를 바탕으로
+최근 30일 진행 중인 이벤트·프로모션 동향을 정리해줘.
+출력: 1.증권사명 2.이벤트명 3.상품군 4.혜택 유형 5.종료일 6.공격성 점수 7.자사 영향도 8.추천 대응
+출처·수집 시점을 표시하고 추정은 '추정'으로 표시, 비방 없이 내부 전략 참고용으로.`)}</div></div>
+ </div>
+ ${secT(null,"프롬프트 작성 전 체크리스트")}
+ <div class="card pad"><div class="grid g2" style="gap:4px 24px">${CHECKLIST.map(c=>`<label class="ck"><input type="checkbox">${c}</label>`).join("")}</div></div>`;}
+function agents(){return `
+ <h1>예시 에이전트 5종 — 만들 것을 고르세요</h1><p class="sub">하나 고르면 9단계 ‘따라 만들기’가 시작됩니다. 인터넷망 외부 데이터만으로 만들 수 있어요.</p>
+ <div class="grid g2" style="margin-top:18px">${AGENTS.map(a=>`<div class="card pad"><div style="display:flex;justify-content:space-between;gap:8px"><div><div style="font-size:13px;font-weight:600">${a.name}</div><div class="mono muted" style="font-size:11px;margin-top:2px">${a.en}</div></div>${pill("난이도 "+a.diff,diffTone(a.diff))}</div><div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">${a.div.map(d=>pill(d)).join("")}</div><div class="muted" style="font-size:12px;margin-top:10px">만들 결과물 · ${a.build}</div><div class="grid g2" style="margin-top:14px;gap:8px"><button class="btn btn-indigo" onclick="startWizard('${a.id}')">따라 만들기</button><button class="btn btn-ghost" onclick="showPrompt('${a.id}')">프롬프트 보기</button><button class="btn btn-ghost" onclick="goto('data')">데이터 연결</button></div></div>`).join("")}</div>
+ ${secT(null,"한눈에 비교")}
+ <div class="card" style="overflow:hidden"><table><thead><tr><th>에이전트</th><th>주요 사용자</th><th>난이도</th><th>민감도</th><th>MVP 추천도</th></tr></thead><tbody>${AGENTS.map(a=>`<tr><td>${a.en}</td><td class="muted">${a.div.slice(0,2).join(", ")}</td><td>${a.diff}</td><td>${a.sens}</td><td>${a.mvp}</td></tr>`).join("")}</tbody></table></div>`;}
+function converter(){const examples=["공모주 청약 일정과 고객 문의 포인트를 정리해주는 에이전트를 만들고 싶어요.","경쟁사 앱 업데이트와 신규 기능을 추적하는 에이전트를 만들고 싶어요.","오늘 공시 중 IB 딜 가능성이 있는 기업만 골라주는 에이전트를 만들고 싶어요."];return `
+ <h1>아이디어 → 에이전트 변환기</h1><p class="sub">업무 아이디어를 말하면 설계서와 프롬프트로 바꿔드립니다. 그 다음 ‘따라 만들기’로 이어집니다.</p>
+ <div class="grid g2" style="margin-top:20px;align-items:start">
+  <div><div class="card pad"><label class="muted" style="font-size:12px;font-weight:600">어떤 업무를 돕는 에이전트를 만들고 싶나요?</label><textarea rows="4" style="margin-top:8px" placeholder="예: 공모주 청약 일정과 고객 문의 포인트를 정리해주는 에이전트를 만들고 싶어요." oninput="state.idea=this.value">${esc(state.idea)}</textarea>
+   <div style="margin-top:12px"><label class="muted" style="font-size:12px;font-weight:600">대상 본부 (선택)</label><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${DIVISIONS.map(d=>`<button class="chip ${state.div===d?"on":""}" onclick="setDiv('${d}')">${d}</button>`).join("")}</div></div>
+   <button class="btn btn-indigo" style="width:100%;margin-top:16px" onclick="genBP()">✳ 에이전트 설계서 만들기</button></div>
+   <div style="margin-top:12px"><div class="muted" style="font-size:12px;margin-bottom:6px">예시 아이디어 (클릭)</div>${examples.map(e=>`<button class="card pad" style="display:block;width:100%;text-align:left;font-size:12px;color:#475569;margin-bottom:6px;cursor:pointer;padding:10px 12px" onclick="setIdea('${e.replace(/'/g,"\\'")}')">${e}</button>`).join("")}</div>
+  </div>
+  <div id="bpOut">${state.bp?blueprintPanel(state.bp):`<div class="card pad" style="border-style:dashed;text-align:center;color:#94a3b8;padding:40px">왼쪽에 아이디어를 적고 <b style="color:#475569">‘에이전트 설계서 만들기’</b>를 누르면<br>여기에 설계서가 생성됩니다.</div>`}</div>
+ </div>`;}
+function blueprintPanel(bp){const fields=[["대상 사용자",bp.users.join(", ")],["해결 업무",bp.problem],["사용 데이터",bp.data.join(", ")],["출력값",bp.outputs.join(", ")],["화면 구성",bp.screen.join(", ")],["연결 후보",bp.api.join(", ")],["MVP 난이도",bp.diff]];return `
+ <div class="card pad"><div style="font-size:15px;font-weight:600">${bp.name}</div><div class="muted" style="font-size:12px">${bp.one}</div>
+  <div style="margin-top:14px">${fields.map(f=>`<div style="display:flex;gap:12px;margin:5px 0;font-size:13px"><span class="muted" style="width:80px;flex-shrink:0;font-size:12px">${f[0]}</span><span style="color:#334155">${f[1]}</span></div>`).join("")}</div>
+  <div style="margin-top:14px">${codebox("복사용 프롬프트 초안",makePrompt(bp))}</div>
+  <div style="margin-top:14px;background:var(--amber-bg);border:1px solid #fcd34d;border-radius:8px;padding:10px 12px;font-size:12px;color:var(--amber)">보안/준법 · 외부 공개 데이터만 사용, 고객정보·미공개정보 금지, 내부 참고용 문구 포함, 운영 전 검토.</div>
+  <button class="btn btn-indigo" style="width:100%;margin-top:14px" onclick="startWizardBP()">이 설계서로 따라 만들기 →</button>
+ </div>`;}
+function dataGuide(){return `
+ <h1>데이터/API 연결 가이드</h1><p class="sub">샘플로 만든 에이전트를 ‘진짜 데이터’에 연결하는 실제 방법을 자세히 안내합니다. 코드는 Claude Code가 쓰고, 직원은 키 발급과 확인만 하면 됩니다.</p>
+ ${secT(null,"먼저, 큰 그림 4단계")}
+ <div class="card pad"><ol style="margin-left:18px;font-size:13px;line-height:1.9;color:#334155"><li><b>인증키(출입증) 발급</b> — 창구별 사이트에서 보통 무료로 발급</li><li><b>설정 파일(.env)에 키 넣기</b> — 키는 코드가 아니라 설정 파일에 따로 보관(보안)</li><li><b>어댑터로 호출</b> — 받아온 데이터를 화면 형식으로 바꿔주는 작은 코드를 Claude Code가 생성</li><li><b>전환</b> — <span class="mono">DATA_SOURCE=live</span> 한 줄로 샘플 → 실데이터(화면 코드는 그대로)</li></ol></div>
+ ${secT(null,"데이터 창구 한눈에 비교")}
+ <div class="card" style="overflow:hidden"><table><thead><tr><th>창구</th><th>발급처</th><th>비용</th><th>인증 방식</th><th>대표 용도</th></tr></thead><tbody>
+  <tr><td>네이버 뉴스 검색</td><td class="muted">developers.naver.com</td><td>무료(일 25,000건)</td><td>헤더 키 2개</td><td>뉴스량·키워드</td></tr>
+  <tr><td>DART 공시</td><td class="muted">opendart.fss.or.kr</td><td>무료</td><td>쿼리 인증키(40자)</td><td>공시·딜·실적</td></tr>
+  <tr><td>KIS 시세</td><td class="muted">apiportal.koreainvestment.com</td><td>무료(계좌)</td><td>토큰(약 24h)</td><td>시세·거래대금</td></tr>
+ </tbody></table></div>
+ ${secT(null,"쉬운 용어 풀이")}
+ <div class="grid g2">${TERMS.map(t=>`<div class="card pad"><div style="font-size:13px;font-weight:600">${t[0]}</div><div class="muted" style="font-size:12px;margin-top:4px">${t[1]}</div></div>`).join("")}</div>
+ ${secT(null,"창구별 상세 연동 방법 (단계별)")}
+ ${Object.keys(SOURCES).map(renderSource).join("")}
+ ${secT(null,"받아온 데이터를 화면에 꽂는 ‘어댑터’ 예시")}
+ <div class="card pad"><div class="muted" style="font-size:12px;margin-bottom:6px">예: DART 공시 응답 → ‘딜 후보 표’ 형식으로 변환 (이 코드도 Claude Code가 만들어 줍니다)</div>${codebox("어댑터 예시 (개념)", "// DART 공시 응답 → 딜 후보 표로 변환\nconst rows = response.list.map(d => ({\n  기업: d.corp_name,\n  공시: d.report_nm,\n  시그널: dealSignal(d.report_nm),  // 유상증자 → '자금조달 니즈'\n  공시일: d.rcept_dt,\n}));\n// 화면은 rows 만 그리면 됩니다 (샘플이든 실데이터든 동일)")}</div>
+ ${secT(null,"연결 전 체크리스트")}
+ <div class="card pad">${["인증키를 .env(설정 파일)에만 보관했나요?","무료 한도·호출 주기를 확인했나요?","응답 필드를 화면 형식으로 매핑(어댑터)했나요?","결과에 출처·수집 시점을 표시하나요?","준법·정보보호 부서 검토를 받았나요?"].map(c=>`<label class="ck"><input type="checkbox">${c}</label>`).join("")}</div>
+ ${secT(null,"자주 묻는 질문")}
+ <div class="grid" style="gap:10px">
+  <div class="card pad"><div style="font-size:13px;font-weight:600">Q. 인증키가 외부로 새면요?</div><div class="muted" style="font-size:12px;margin-top:4px">.env에만 보관하고 코드·메신저·캡처로 공유하지 마세요. 유출 의심 시 발급처에서 즉시 재발급(폐기)합니다.</div></div>
+  <div class="card pad"><div style="font-size:13px;font-weight:600">Q. 무료 한도를 넘으면요?</div><div class="muted" style="font-size:12px;margin-top:4px">한 번 받은 데이터는 저장(캐시)해 재사용하고, 호출 주기를 늘리세요. 같은 요청을 반복 호출하지 않게 합니다.</div></div>
+  <div class="card pad"><div style="font-size:13px;font-weight:600">Q. 응답 필드 이름이 예시와 달라요?</div><div class="muted" style="font-size:12px;margin-top:4px">각 사 개발자 문서의 최신 명세를 확인하세요. 화면은 그대로 두고 어댑터의 매핑만 바꾸면 됩니다.</div></div>
+  <div class="card pad"><div style="font-size:13px;font-weight:600">Q. 실데이터 전에 무엇을 확인하나요?</div><div class="muted" style="font-size:12px;margin-top:4px">‘보안/준법 체크’를 통과하고, 준법감시·정보보호 부서 검토를 받은 뒤 전환하세요.</div></div>
+ </div>
+ <div class="card pad" style="margin-top:12px;background:var(--amber-bg);border-color:#fcd34d;font-size:12px;color:var(--amber)">인증키는 절대 외부에 공유하지 말고 설정 파일에만 보관하세요. 실데이터·실서비스 적용 전 준법·정보보호 검토가 필요합니다.</div>`;}
+function security(){const items=["외부 공개 데이터(뉴스·공시·주가·공개 이벤트)만 사용하나요?","고객 개인정보·계좌정보를 사용하지 않나요?","미공개정보·루머·내부자 정보를 사용하지 않나요?","투자 권유(매수/매도/목표가)처럼 보이는 표현을 막았나요?","결과에 출처와 수집 시점을 표시하나요?","추정과 사실을 구분해 표시하나요?","‘내부 업무 참고용’ 문구가 포함되어 있나요?","유료/로그인 필요/접근 제한 콘텐츠를 수집하지 않나요?","운영 적용 전 준법 검토 절차를 거치나요?"];return `
+ <h1>보안/준법 체크</h1><p class="sub">에이전트를 실제 업무에 쓰기 전, 아래 항목을 확인하세요.</p>
+ <div class="card pad" style="margin-top:20px">${items.map(it=>`<label class="ck"><input type="checkbox">${it}</label>`).join("")}</div>
+ <div class="card pad" style="margin-top:16px;background:var(--amber-bg);border-color:#fcd34d;font-size:13px;color:var(--amber)">자체 점검용입니다. 실데이터·실서비스 적용 시 반드시 준법감시·정보보호 부서 검토를 받으세요.</div>`;}
+
+/* ===== 고도화 기능: mock 데이터 ===== */
+const RECIPE={
+ buzz:{steps:["키워드 수집","뉴스량 집계","종목 매핑","점수 계산","요약 생성","본부별 코멘트 생성"],pd:"낮음",od:"보통"},
+ competitor:{steps:["대상 경쟁사 선정","이벤트·공시·뉴스 수집","변화 감지","공격성 점수 계산","자사 영향도 평가","대응 액션 정리"],pd:"보통",od:"보통"},
+ theme:{steps:["테마-종목 매핑","뉴스량 집계","수익률·거래대금 계산","과열점수 산출","상태 라벨링","본부 코멘트 생성"],pd:"보통",od:"보통"},
+ deal:{steps:["공시 수집(DART)","딜 시그널 분류","재무 신호 점검","딜 가능성 점수","근거 정리","검토 후보 작성"],pd:"높음",od:"높음"},
+ timeline:{steps:["종목 뉴스·공시 수집","이벤트 정렬","주가 반응 계산","감성 분류","움직임 요약","상담 코멘트 생성"],pd:"보통",od:"보통"},
+};
+const TEMPLATES=[
+ {id:"t1",name:"Market Buzz Ranking Agent",div:["S&T","WM"],type:"대시보드",data:["뉴스","주가","거래대금"],diff:"낮음",sens:"낮음",use:128,rating:4.6,appr:"승인됨",aid:"buzz"},
+ {id:"t2",name:"Brokerage Competitor Radar Agent",div:["본사관리","마케팅"],type:"리포트",data:["이벤트 페이지","뉴스","공시"],diff:"보통",sens:"보통",use:96,rating:4.4,appr:"승인됨",aid:"competitor"},
+ {id:"t3",name:"Theme Heat Radar Agent",div:["S&T","WM","리서치"],type:"대시보드",data:["뉴스","주가","거래대금"],diff:"보통",sens:"낮음",use:110,rating:4.5,appr:"승인됨",aid:"theme"},
+ {id:"t4",name:"Deal Opportunity Radar Agent",div:["IB","리서치"],type:"대시보드",data:["DART 공시","재무","뉴스"],diff:"높음",sens:"보통",use:64,rating:4.2,appr:"검토중",aid:"deal"},
+ {id:"t5",name:"Stock Event Timeline Agent",div:["WM","S&T"],type:"대시보드",data:["뉴스","공시","주가"],diff:"보통",sens:"낮음",use:102,rating:4.5,appr:"승인됨",aid:"timeline"},
+ {id:"t6",name:"IPO Subscription Support Agent",div:["WM","고객센터"],type:"리포트",data:["IPO 일정","증권신고서","뉴스"],diff:"보통",sens:"보통",use:71,rating:4.3,appr:"승인됨",aid:null},
+ {id:"t7",name:"Competitor App Tracker Agent",div:["AI디지털","본사관리"],type:"리포트",data:["앱스토어 공개","뉴스"],diff:"보통",sens:"낮음",use:43,rating:4.1,appr:"검토중",aid:null},
+ {id:"t8",name:"Morning Brief Generator Agent",div:["S&T","WM"],type:"리포트",data:["뉴스","주가","공시"],diff:"낮음",sens:"낮음",use:88,rating:4.6,appr:"승인됨",aid:null},
+ {id:"t9",name:"VOC Early Warning Agent",div:["본사관리","AI디지털"],type:"대시보드",data:["VOC(내부)","뉴스"],diff:"높음",sens:"높음",use:22,rating:4.0,appr:"초안",aid:null},
+ {id:"t10",name:"Fund Flow Monitor Agent",div:["S&T","리서치"],type:"대시보드",data:["수급 데이터","주가"],diff:"보통",sens:"보통",use:37,rating:4.2,appr:"검토중",aid:null},
+ {id:"t11",name:"ETF Trend Summary Agent",div:["WM","리서치"],type:"리포트",data:["ETF 데이터","주가"],diff:"낮음",sens:"낮음",use:54,rating:4.3,appr:"승인됨",aid:null},
+ {id:"t12",name:"Policy Impact Tracker Agent",div:["리서치","본사관리"],type:"리포트",data:["정책 뉴스","공시"],diff:"보통",sens:"낮음",use:29,rating:4.0,appr:"초안",aid:null},
+ {id:"t13",name:"Research Report Summarizer Agent",div:["리서치","WM"],type:"리포트",data:["리서치 리포트","뉴스"],diff:"보통",sens:"보통",use:61,rating:4.4,appr:"승인됨",aid:null},
+];
+const DATA_MODES=[
+ {id:"buzz",name:"Market Buzz Ranking Agent",mode:"Sample",connected:["뉴스 검색 API"],missing:["주가/거래대금 데이터"],approval:"불필요",tested:"오늘 09:30",next:"주가 데이터 테스트 연결"},
+ {id:"theme",name:"Theme Heat Radar Agent",mode:"Sample",connected:["거래량 데이터"],missing:["종목-테마 매핑"],approval:"불필요",tested:"오늘 08:50",next:"테마 매핑 연결"},
+ {id:"competitor",name:"Brokerage Competitor Radar Agent",mode:"Mock",connected:[],missing:["뉴스 검색 API","공시 데이터"],approval:"불필요",tested:"-",next:"뉴스 API 키 등록"},
+ {id:"morning",name:"Morning Brief Generator Agent",mode:"Mock",connected:[],missing:["뉴스","주가","공시"],approval:"불필요",tested:"-",next:"샘플 데이터 구성"},
+ {id:"voc",name:"VOC Early Warning Agent",mode:"Mock",connected:[],missing:["VOC(내부)","뉴스"],approval:"불필요",tested:"-",next:"내부망 연계 검토"},
+ {id:"deal",name:"Deal Opportunity Radar Agent",mode:"Approval Required",connected:["DART 공시"],missing:["재무 요약 데이터"],approval:"필요",tested:"어제 18:10",next:"준법 승인 요청"},
+ {id:"timeline",name:"Stock Event Timeline Agent",mode:"Live",connected:["뉴스 검색 API","DART 공시","주가 데이터"],missing:[],approval:"승인됨",tested:"오늘 09:45",next:"운영 모니터링"},
+];
+const VERSIONS={
+ buzz:[
+  {version:"v1.0",title:"최초 생성 · 뉴스량 기준 순위화",author:"WM 김OO",createdAt:"2026-05-02",appr:"승인됨",before:"",after:"뉴스량을 기준으로 종목 순위를 보여줘.",changes:["최초 생성","뉴스량 기준 순위화"]},
+  {version:"v1.1",title:"거래대금 변화 추가",author:"S&T 박OO",createdAt:"2026-05-15",appr:"승인됨",before:"뉴스량을 기준으로 종목 순위를 보여줘.",after:"뉴스량과 거래대금 변화를 함께 고려해 종목 순위를 보여줘.",changes:["+ 거래대금 변화 추가"]},
+  {version:"v1.2",title:"WM 상담 코멘트 추가",author:"WM 이OO",createdAt:"2026-05-28",appr:"검토중",before:"뉴스량과 거래대금 변화를 함께 고려해 종목 순위를 보여줘.",after:"뉴스량, 검색 관심도, 거래대금 변화를 함께 고려해 종목 순위를 보여주고, WM 상담용 한 줄 코멘트를 덧붙여줘.",changes:["+ 검색 관심도 추가","+ WM 상담 코멘트 추가"]},
+  {version:"v1.3",title:"출처 표시 조건 강화",author:"AI디지털 관리자",createdAt:"2026-06-10",appr:"승인됨",before:"뉴스량, 검색 관심도, 거래대금 변화를 함께 고려해 종목 순위를 보여주고, WM 상담용 한 줄 코멘트를 덧붙여줘.",after:"뉴스량, 검색 관심도, 거래대금 변화를 함께 고려해 종목 순위를 보여주고 WM 상담용 한 줄 코멘트를 덧붙이되, 출처와 수집 시점을 반드시 표시해줘.",changes:["+ 출처 표시 강화","+ 수집 시점 표시"]},
+ ],
+ competitor:[
+  {version:"v1.0",title:"최초 생성 · 이벤트 요약",author:"본사관리 정OO",createdAt:"2026-05-06",appr:"승인됨",before:"",after:"경쟁사 이벤트를 요약해줘.",changes:["최초 생성"]},
+  {version:"v1.1",title:"공격성 점수·추정 표시 추가",author:"AI디지털 관리자",createdAt:"2026-06-01",appr:"승인됨",before:"경쟁사 이벤트를 요약해줘.",after:"경쟁사 이벤트를 요약하고 공격성 점수와 자사 영향도를 표시하되, 추정은 '추정'으로 표시해줘.",changes:["+ 공격성 점수","+ 추정 표시"]},
+ ],
+ theme:[
+  {version:"v1.0",title:"최초 생성 · 뉴스량 기준",author:"S&T 박OO",createdAt:"2026-05-09",appr:"승인됨",before:"",after:"뉴스량 기준으로 과열 테마를 보여줘.",changes:["최초 생성"]},
+  {version:"v1.1",title:"리스크 유의 문구 추가",author:"WM 이OO",createdAt:"2026-06-03",appr:"승인됨",before:"뉴스량 기준으로 과열 테마를 보여줘.",after:"뉴스량·수익률·거래대금으로 과열 테마를 보여주되, 매수 추천이 아닌 ‘관찰 필요’로 표현하고 리스크 유의 문구를 포함해줘.",changes:["+ 거래대금·수익률","+ 리스크 유의 문구"]},
+ ],
+ deal:[
+  {version:"v1.0",title:"최초 생성 · 공시 기반",author:"IB 최OO",createdAt:"2026-05-12",appr:"승인됨",before:"",after:"공시 기반으로 딜 후보를 보여줘.",changes:["최초 생성"]},
+  {version:"v1.1",title:"미공개정보 금지·검토 후보 표현",author:"준법 검토",createdAt:"2026-06-05",appr:"검토중",before:"공시 기반으로 딜 후보를 보여줘.",after:"공개 공시 기반으로 딜 ‘검토 후보’를 보여주되, 미공개정보는 사용하지 말고 투자 권유로 보이는 표현을 금지해줘.",changes:["+ 미공개정보 금지","+ ‘검토 후보’ 표현"]},
+ ],
+ timeline:[
+  {version:"v1.0",title:"최초 생성 · 타임라인",author:"WM 이OO",createdAt:"2026-05-18",appr:"승인됨",before:"",after:"종목 이벤트와 주가 반응을 타임라인으로 보여줘.",changes:["최초 생성"]},
+  {version:"v1.1",title:"참고용 문구·기준 시점 추가",author:"AI디지털 관리자",createdAt:"2026-06-08",appr:"승인됨",before:"종목 이벤트와 주가 반응을 타임라인으로 보여줘.",after:"종목 이벤트와 주가 반응을 타임라인으로 보여주되, 상담 코멘트에 ‘참고용’ 문구와 주가 기준 시점을 표시해줘.",changes:["+ 참고용 문구","+ 기준 시점 표시"]},
+ ],
+};
+const VNAMES={buzz:"Market Buzz Ranking Agent",competitor:"Brokerage Competitor Radar Agent",theme:"Theme Heat Radar Agent",deal:"Deal Opportunity Radar Agent",timeline:"Stock Event Timeline Agent"};
+const QUALITY=[
+ {name:"Market Buzz Ranking Agent",use:1240,sat:4.6,src:95,comp:94,regen:9,err:2,improve:false},
+ {name:"Brokerage Competitor Radar Agent",use:430,sat:4.3,src:90,comp:86,regen:15,err:4,improve:true},
+ {name:"Theme Heat Radar Agent",use:880,sat:4.5,src:93,comp:90,regen:11,err:3,improve:false},
+ {name:"Deal Opportunity Radar Agent",use:210,sat:4.1,src:88,comp:82,regen:18,err:5,improve:true},
+ {name:"Stock Event Timeline Agent",use:560,sat:4.2,src:89,comp:80,regen:16,err:4,improve:true},
+];
+let FEEDBACKS=[
+ {name:"Market Buzz Ranking Agent",type:"유용했어요",comment:"출처가 잘 표시되어 아침 브리핑에 유용했습니다.",div:"S&T",time:"오늘 09:40"},
+ {name:"Stock Event Timeline Agent",type:"투자권유처럼 보여요",comment:"상담 코멘트가 조금 투자권유처럼 보일 수 있습니다.",div:"WM",time:"어제 16:20"},
+ {name:"Theme Heat Radar Agent",type:"데이터가 오래됐어요",comment:"기준 시점이 오래된 것 같습니다.",div:"리서치",time:"어제 11:05"},
+];
+
+/* ===== 고도화: 공통 ===== */
+function toast(msg){let el=document.getElementById("toast");if(!el){el=document.createElement("div");el.id="toast";el.style.cssText="position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;z-index:50;box-shadow:0 6px 20px rgba(0,0,0,.2);opacity:0;transition:opacity .2s;max-width:90%";document.body.appendChild(el);}el.textContent=msg;el.style.opacity="1";clearTimeout(window._tt);window._tt=setTimeout(function(){el.style.opacity="0";},1900);}
+function modeBadge(m){const map={"Mock":"slate","Sample":"indigo","Live":"emerald","Approval Required":"amber","Blocked":"red"};return pill(m,map[m]||"slate");}
+function apprPill(a){return pill(a,a==="승인됨"?"emerald":(a==="검토중"||a==="필요"||a==="승인대기")?"amber":(a==="반려"?"red":"slate"));}
+
+/* ===== Agent Recipe ===== */
+function recipe(){
+ state.recipeAgent=state.recipeAgent||AGENTS[0].id;
+ const a=AGENTS.find(x=>x.id===state.recipeAgent);const r=RECIPE[a.id];
+ return `
+ <h1>Agent Recipe</h1><p class="sub">업무 에이전트가 어떤 재료와 순서로 만들어지는지 한눈에 이해하세요.</p>
+ <div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap">${AGENTS.map(x=>`<button class="chip ${x.id===a.id?"on":""}" onclick="setRecipe('${x.id}')">${x.name}</button>`).join("")}</div>
+ ${secT(null,"레시피 요약")}
+ <div class="card pad"><div style="font-size:15px;font-weight:600">${a.name}</div><div class="muted" style="font-size:13px;margin-top:6px">해결하는 문제 · ${a.problem}</div><div style="margin-top:10px;font-size:13px"><b>완성 결과</b><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${a.bd.출력.split("·").map(x=>pill(x.trim(),"indigo")).join("")}</div></div></div>
+ ${secT(null,"필요한 재료")}
+ <div class="grid g2"><div class="card pad"><div class="muted" style="font-size:12px;margin-bottom:6px">필수 재료</div><div style="display:flex;gap:6px;flex-wrap:wrap">${a.req.map(d=>pill(d,"emerald")).join("")}</div></div><div class="card pad"><div class="muted" style="font-size:12px;margin-bottom:6px">선택 재료</div><div style="display:flex;gap:6px;flex-wrap:wrap">${a.opt.map(d=>pill(d)).join("")}</div></div></div>
+ ${secT(null,"만드는 순서")}
+ <div class="card pad">${r.steps.map((st,i)=>`<div style="display:flex;gap:10px;align-items:flex-start;padding:6px 0;${i<r.steps.length-1?"border-bottom:1px dashed var(--line)":""}"><span class="stnum" style="width:22px;height:22px;font-size:11px">${i+1}</span><div style="font-size:13px;padding-top:2px">${st}</div></div>`).join("")}</div>
+ ${secT(null,"완성 예시")}
+ ${examplePreview(a.ex)}
+ ${secT(null,"레시피 난이도")}
+ <div class="grid g3">${[["데이터 난이도",a.diff],["프롬프트 난이도",r.pd],["보안 민감도",a.sens],["운영 난이도",r.od],["MVP 추천도",a.mvp]].map(x=>`<div class="card pad"><div class="muted" style="font-size:12px">${x[0]}</div><div style="font-size:15px;font-weight:600;margin-top:2px">${x[1]}</div></div>`).join("")}</div>
+ <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-indigo" onclick="startWizard('${a.id}')">따라 만들기 →</button><button class="btn btn-ghost" onclick="showPrompt('${a.id}')">프롬프트 보기</button><button class="btn btn-ghost" onclick="goto('data')">데이터 연결 가이드</button></div>`;
+}
+function setRecipe(id){state.recipeAgent=id;render();}
+function showRecipe(id){state.recipeAgent=id;state.screen="recipe";render();}
+function showPrompt(id){state.agent=id;state.bp=null;state.step=4;state.screen="wizard";render();}
+
+/* ===== Prompt Doctor ===== */
+function promptDoctor(){
+ const d=state.diag;
+ return `
+ <h1>Prompt Doctor</h1><p class="sub">작성한 프롬프트를 점수화하고, 더 안전하고 구체적으로 개선하세요.</p>
+ <div class="grid g2" style="margin-top:18px;align-items:start">
+  <div class="card pad"><label class="muted" style="font-size:12px;font-weight:600">프롬프트를 붙여넣으세요</label>
+   <textarea id="docTa" rows="12" style="margin-top:8px;font-family:ui-monospace,monospace" placeholder="예: 경쟁사 이벤트를 정리해줘.">${esc(state.docText||"")}</textarea>
+   <button class="btn btn-indigo" style="width:100%;margin-top:12px" onclick="diagnose()">프롬프트 진단하기</button></div>
+  <div id="diagOut">${d?diagPanel(d):`<div class="card pad" style="border-style:dashed;text-align:center;color:#94a3b8;padding:40px">왼쪽에 프롬프트를 붙여넣고<br><b style="color:#475569">‘프롬프트 진단하기’</b>를 누르세요.</div>`}</div>
+ </div>`;
+}
+function diagnose(){const ta=document.getElementById("docTa");const t=ta?ta.value:(state.docText||"");state.docText=t;state.diag=runDiag(t);document.getElementById("diagOut").innerHTML=diagPanel(state.diag);toast("진단 완료 · "+state.diag.score+"점");}
+function runDiag(t){
+ t=t||"";const has=re=>re.test(t);
+ const role=has(/너는|역할/),obj=has(/목적|해결|분석|요약|정리|탐지|순위/),inp=has(/데이터|뉴스|공시|주가|입력|거래대금|검색/),out=has(/출력|형식|표|순서|1\./),con=has(/금지|투자 ?권유|출처|수집 ?시점|추정|참고용/);
+ const sc=v=>v?20:0;const score=sc(role)+sc(obj)+sc(inp)+sc(out)+sc(con);
+ const strengths=[],improvements=[];
+ if(obj)strengths.push("업무 주제가 포함되어 있습니다.");
+ if(role)strengths.push("AI의 역할이 지정되어 있습니다.");
+ if(inp)strengths.push("사용할 데이터가 언급되어 있습니다.");
+ if(!role)improvements.push("AI의 역할이 명확하지 않습니다.");
+ if(!inp)improvements.push("입력 데이터가 정의되어 있지 않습니다.");
+ if(!out)improvements.push("출력 형식이 없습니다.");
+ if(!has(/출처/))improvements.push("출처 표시 조건이 없습니다.");
+ if(!has(/투자 ?권유|매수|매도|참고용/))improvements.push("투자권유 방지 문구가 없습니다.");
+ const sourceRisk=has(/출처/)?"낮음":"높음";
+ const inv=/매수|매도|추천|상승 ?가능성/.test(t)?"높음":(has(/투자 ?권유|참고용/)?"낮음":"보통");
+ const priv=/개인정보|고객명|주민|계좌/.test(t)?"높음":"낮음";
+ return {score:score,role:role,obj:obj,inp:inp,out:out,con:con,strengths:strengths,improvements:improvements,risk:{sourceRisk:sourceRisk,inv:inv,priv:priv},improved:improve(t)};
+}
+function improve(t){const first=((t||"").trim().split("\n")[0]||"").replace(/[.。]/g,"").trim();const topic=first||"경쟁사 이벤트 동향";return `너는 증권사 내부 업무를 돕는 분석 에이전트야.
+${topic} 관련 내용을, 신뢰할 수 있는 공개 데이터(뉴스·공시·주가 등)를 바탕으로 정리해줘.
+출력은 다음 형식으로 작성해줘.
+1. 항목명  2. 핵심 내용  3. 관련 종목/대상  4. 변화·근거  5. 본부별 참고 코멘트
+매수/매도 권유 표현은 쓰지 말고 내부 업무 참고용으로 작성하고,
+출처와 수집 시점을 표시하고 불확실한 내용은 '추정'으로 표시해줘.`;}
+function diagPanel(d){
+ const lvl=v=>v?'<span style="color:var(--emerald)">충분</span>':'<span style="color:var(--red)">부족/없음</span>';
+ const rp=v=>pill(v,v==="높음"?"red":v==="보통"?"amber":"emerald");
+ return `
+ <div class="card pad"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13px;font-weight:600">프롬프트 품질 점수</span><span style="font-size:28px;font-weight:700;color:${d.score>=80?"var(--emerald)":d.score>=50?"var(--amber)":"var(--red)"}">${d.score}<span style="font-size:13px;color:var(--muted)">점</span></span></div><div class="bar2" style="margin-top:8px"><div style="width:${d.score}%;background:${d.score>=80?"#10b981":d.score>=50?"#f59e0b":"#ef4444"}"></div></div></div>
+ <div class="card pad" style="margin-top:12px"><div style="font-size:13px;font-weight:600;margin-bottom:6px">좋은 점</div>${d.strengths.length?`<ul class="disc">${d.strengths.map(x=>`<li>${x}</li>`).join("")}</ul>`:`<div class="muted" style="font-size:12px">아직 강점으로 잡힌 항목이 없습니다.</div>`}<div style="font-size:13px;font-weight:600;margin:10px 0 6px">개선 필요</div>${d.improvements.length?`<ul class="disc">${d.improvements.map(x=>`<li>${x}</li>`).join("")}</ul>`:`<div class="muted" style="font-size:12px">큰 개선점이 없습니다.</div>`}</div>
+ <div class="card pad" style="margin-top:12px"><div style="font-size:13px;font-weight:600;margin-bottom:8px">위험 태그</div><div style="display:flex;gap:10px;flex-wrap:wrap;font-size:12px;align-items:center"><span>출처 누락 ${rp(d.risk.sourceRisk)}</span><span>투자권유 ${rp(d.risk.inv)}</span><span>개인정보 ${rp(d.risk.priv)}</span></div></div>
+ <div class="card pad" style="margin-top:12px"><div style="font-size:13px;font-weight:600;margin-bottom:8px">좋은 프롬프트 5요소 점검</div><div style="font-size:13px;line-height:1.9"><div>역할 · ${lvl(d.role)}</div><div>업무 목적 · ${lvl(d.obj)}</div><div>입력 데이터 · ${lvl(d.inp)}</div><div>출력 형식 · ${lvl(d.out)}</div><div>제약조건 · ${lvl(d.con)}</div></div></div>
+ <div style="margin-top:12px"><div class="muted" style="font-size:12px;font-weight:600;margin-bottom:4px">자동 개선된 프롬프트</div>${codebox("개선 프롬프트",d.improved)}</div>`;
+}
+
+/* ===== Data Mode Control ===== */
+function dataMode(){
+ const cnt=m=>DATA_MODES.filter(x=>x.mode===m).length;
+ const appr=DATA_MODES.filter(x=>x.approval==="필요"||x.approval==="승인대기").length;
+ const flow=["Mock","Sample","API Key 등록","테스트 연결","필드 매핑","승인 요청","Live"];
+ const modeStep=m=>({"Mock":0,"Sample":1,"Approval Required":5,"Live":6,"Blocked":0}[m]||0);
+ return `
+ <h1>Data Mode Control</h1><p class="sub">Mock Data에서 Live Data까지, 에이전트 데이터 연결 상태를 관리하세요.</p>
+ <div class="grid" style="grid-template-columns:repeat(5,1fr);margin-top:16px">${[["Mock",cnt("Mock")],["Sample",cnt("Sample")],["Live",cnt("Live")],["승인 필요",appr],["차단",cnt("Blocked")]].map(k=>`<div class="card pad" style="text-align:center"><div class="muted" style="font-size:12px">${k[0]}</div><div style="font-size:22px;font-weight:700;margin-top:2px">${k[1]}</div></div>`).join("")}</div>
+ ${secT(null,"에이전트별 데이터 상태")}
+ <div style="display:flex;flex-direction:column;gap:12px">${DATA_MODES.map((x,idx)=>`
+  <div class="card pad"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="font-size:13px;font-weight:600">${x.name}</div>${modeBadge(x.mode)}</div>
+   <div class="grid g2" style="margin-top:10px;font-size:12px;gap:4px 16px"><div><span class="muted">연결 데이터</span> · ${x.connected.join(", ")||"없음"}</div><div><span class="muted">추가 필요</span> · ${x.missing.join(", ")||"없음"}</div><div><span class="muted">승인 상태</span> · ${x.approval}</div><div><span class="muted">마지막 테스트</span> · ${x.tested}</div></div>
+   <div style="margin-top:10px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">${flow.map((ff,i)=>`<span class="pill ${i<=modeStep(x.mode)?"p-emerald":"p-slate"}" style="font-size:10px">${ff}</span>${i<flow.length-1?'<span class="muted" style="font-size:10px">→</span>':""}`).join("")}</div>
+   <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span class="muted" style="font-size:12px">다음 액션 · ${x.next}</span><button class="btn btn-ghost" style="font-size:12px;padding:6px 10px" onclick="testConn(${idx})">테스트 연결</button></div>
+   <div id="test${idx}" style="margin-top:8px"></div></div>`).join("")}</div>`;
+}
+function testConn(i){const el=document.getElementById("test"+i);if(el)el.innerHTML=`<div class="card pad" style="background:var(--emerald-bg);border-color:#a7f3d0;font-size:12px;color:#065f46">테스트 결과: <b>성공</b> · 응답 240ms · 샘플 20건 수신 · 필드 매핑 92% · 마스킹 불필요 · 로그 저장 활성화</div>`;toast("테스트 연결 성공 (240ms · 20건)");}
+
+/* ===== Agent Template Market ===== */
+function templateMarket(){
+ state.tplFilter=state.tplFilter||"전체";const fl=state.tplFilter;
+ let list=TEMPLATES.slice();
+ if(["IB","S&T","WM","본사관리","AI디지털"].includes(fl))list=list.filter(t=>t.div.includes(fl));
+ else if(fl==="낮은 난이도")list=list.filter(t=>t.diff==="낮음");
+ else if(fl==="승인 완료")list=list.filter(t=>t.appr==="승인됨");
+ else if(fl==="인기순")list=list.sort((a,b)=>b.use-a.use);
+ const filters=["전체","IB","S&T","WM","본사관리","AI디지털","낮은 난이도","승인 완료","인기순"];
+ const popular=TEMPLATES.slice().sort((a,b)=>b.use-a.use).slice(0,5);
+ return `
+ <h1>Agent Template Market</h1><p class="sub">검증된 업무 에이전트 템플릿을 골라 빠르게 시작하세요.</p>
+ <div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap">${filters.map(x=>`<button class="chip ${fl===x?"on":""}" onclick="setTpl('${x}')">${x}</button>`).join("")}</div>
+ <div class="grid g2" style="margin-top:16px;align-items:start">
+  <div class="grid" style="gap:12px">${list.map(t=>`<div class="card pad"><div style="display:flex;justify-content:space-between;gap:8px"><div style="font-size:13px;font-weight:600">${t.name}</div>${apprPill(t.appr)}</div><div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${t.div.map(d=>pill(d)).join("")}<span class="pill p-indigo">${t.type}</span></div><div class="muted" style="font-size:12px;margin-top:8px">데이터 · ${t.data.join(", ")}</div><div style="display:flex;gap:12px;margin-top:8px;font-size:12px" class="muted"><span>난이도 ${t.diff}</span><span>민감도 ${t.sens}</span><span>★ ${t.rating}</span><span>사용 ${t.use}</span></div><div style="margin-top:12px"><button class="btn btn-indigo" style="width:100%" onclick="toast('템플릿으로 시작합니다 (데모)')">시작하기</button></div></div>`).join("")||`<div class="card pad muted">조건에 맞는 템플릿이 없습니다.</div>`}</div>
+  <div><div class="card pad"><div style="font-size:13px;font-weight:600;margin-bottom:8px">이번 주 인기 템플릿</div>${popular.map((t,i)=>`<div style="display:flex;gap:8px;align-items:center;padding:6px 0;font-size:13px;border-top:${i?"1px solid var(--line)":"none"}"><span class="mono" style="font-weight:700;width:16px;color:#4f46e5">${i+1}</span><span>${t.name}</span></div>`).join("")}</div></div>
+ </div>`;
+}
+function setTpl(fl){state.tplFilter=fl;render();}
+function tplRecipe(aid){if(aid)showRecipe(aid);else toast("이 템플릿의 레시피는 준비 중입니다.");}
+
+/* ===== Agent Version Control ===== */
+function versionControl(){
+ state.verAgent=state.verAgent||"buzz";const vs=VERSIONS[state.verAgent]||[];
+ if(state.verSel==null||state.verSel>=vs.length)state.verSel=vs.length-1;
+ const sel=vs[state.verSel];
+ return `
+ <h1>Agent Version Control</h1><p class="sub">프롬프트와 설정 변경 이력을 안전하게 관리하세요.</p>
+ <div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap">${Object.keys(VERSIONS).map(id=>`<button class="chip ${state.verAgent===id?"on":""}" onclick="setVerAgent('${id}')">${VNAMES[id]}</button>`).join("")}</div>
+ <div class="grid g2" style="margin-top:16px;align-items:start">
+  <div><div class="muted" style="font-size:12px;font-weight:600;margin-bottom:8px">버전 타임라인 (클릭하면 비교)</div><div style="border-left:2px solid var(--line);padding-left:16px">${vs.map((v,i)=>`<div style="position:relative;margin-bottom:14px;cursor:pointer" onclick="setVer(${i})"><span style="position:absolute;left:-21px;top:4px;width:10px;height:10px;border-radius:50%;background:${i===state.verSel?"#4f46e5":"#cbd5e1"}"></span><div style="display:flex;gap:8px;align-items:center"><b class="mono" style="font-size:13px">${v.version}</b>${apprPill(v.appr)}</div><div style="font-size:13px">${v.title}</div><div class="muted" style="font-size:11px">${v.author} · ${v.createdAt}</div></div>`).join("")}</div></div>
+  <div><div class="muted" style="font-size:12px;font-weight:600;margin-bottom:8px">변경 전 / 후 비교 — ${sel.version}</div>
+   <div class="card pad"><div class="muted" style="font-size:11px;margin-bottom:4px">변경 전</div><div style="background:#fef2f2;border-radius:8px;padding:8px;font-size:12px;white-space:pre-wrap;color:#7f1d1d">${esc(sel.before||"(이전 버전 없음)")}</div><div class="muted" style="font-size:11px;margin:10px 0 4px">변경 후</div><div style="background:#ecfdf5;border-radius:8px;padding:8px;font-size:12px;white-space:pre-wrap;color:#065f46">${esc(sel.after||"")}</div><div class="muted" style="font-size:11px;margin:10px 0 4px">변경점</div><ul class="disc">${sel.changes.map(c=>`<li>${c}</li>`).join("")}</ul></div>
+   <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost" style="font-size:12px;padding:7px 11px" onclick="toast('${sel.version} 으로 되돌렸습니다 (데모)')">이 버전으로 되돌리기</button><button class="btn btn-ghost" style="font-size:12px;padding:7px 11px" onclick="toast('변경 내용을 복사했습니다')">변경 내용 복사</button><button class="btn btn-ghost" style="font-size:12px;padding:7px 11px" onclick="toast('승인 요청을 보냈습니다 (데모)')">승인 요청</button><button class="btn btn-dark" style="font-size:12px;padding:7px 11px" onclick="toast('${sel.version} 을 현재 운영 버전으로 지정했습니다')">운영 버전 지정</button></div></div>
+ </div>`;
+}
+function setVerAgent(id){state.verAgent=id;state.verSel=null;render();}
+function setVer(i){state.verSel=i;render();}
+
+/* ===== Agent Quality Monitor ===== */
+function qualityMonitor(){
+ const kpis=[["평균 만족도","4.4 / 5"],["출처 포함률","92%"],["준법 문구 포함률","88%"],["재생성 요청률","14%"],["오류 발생률","3%"],["데이터 최신성","95%"]];
+ const fbtypes=["유용했어요","출처가 부족해요","너무 길어요","투자권유처럼 보여요","데이터가 오래됐어요","다시 생성했어요"];
+ return `
+ <h1>Agent Quality Monitor</h1><p class="sub">사용자 피드백과 품질 지표로 에이전트를 개선하세요.</p>
+ <div class="grid g3" style="margin-top:16px">${kpis.map(k=>`<div class="card pad"><div class="muted" style="font-size:12px">${k[0]}</div><div style="font-size:20px;font-weight:700;margin-top:2px">${k[1]}</div></div>`).join("")}</div>
+ ${secT(null,"에이전트별 품질")}
+ <div class="card" style="overflow:hidden"><table><thead><tr><th>에이전트</th><th>사용</th><th>만족도</th><th>출처%</th><th>준법%</th><th>재생성%</th><th>오류%</th><th>개선</th></tr></thead><tbody>${QUALITY.map(q=>`<tr><td>${q.name}</td><td>${q.use}</td><td>${q.sat}</td><td>${q.src}%</td><td>${q.comp}%</td><td>${q.regen}%</td><td>${q.err}%</td><td>${q.improve?pill("필요","amber"):pill("양호","emerald")}</td></tr>`).join("")}</tbody></table></div>
+ ${secT(null,"사용자 피드백 (버튼을 누르면 샘플 피드백이 추가됩니다)")}
+ <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${fbtypes.map(t=>`<button class="chip" onclick="addFeedback('${t}')">${t}</button>`).join("")}</div>
+ <div id="fbList" class="grid" style="gap:10px">${FEEDBACKS.map(fbCard).join("")}</div>
+ ${secT(null,"개선 추천")}
+ <div class="card pad" style="background:var(--amber-bg);border-color:#fcd34d"><div style="font-size:13px;font-weight:600;color:var(--amber)">Stock Event Timeline Agent 개선 추천</div><ul class="disc" style="margin-top:6px"><li>상담 코멘트에 ‘참고용’ 문구를 더 명확히 추가하세요.</li><li>주가 반응 기준 시점을 표시하세요.</li><li>종목별 이벤트를 최신순/중요도순으로 선택할 수 있게 개선하세요.</li></ul></div>`;
+}
+function fbCard(fb){return `<div class="card pad"><div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:13px">${fb.name}</b>${pill(fb.type,fb.type==="유용했어요"?"emerald":(fb.type==="투자권유처럼 보여요"||fb.type==="출처가 부족해요")?"red":"amber")}</div><div style="font-size:13px;margin-top:6px">${fb.comment}</div><div class="muted" style="font-size:11px;margin-top:4px">${fb.div} · ${fb.time}</div></div>`;}
+function addFeedback(type){const map={"유용했어요":"실제 업무에 도움이 되었습니다.","출처가 부족해요":"출처 표시가 부족해 확인이 어려웠습니다.","너무 길어요":"내용이 길어 핵심 파악이 어려웠습니다.","투자권유처럼 보여요":"표현이 투자권유처럼 보일 수 있습니다.","데이터가 오래됐어요":"데이터 기준 시점이 오래되었습니다.","다시 생성했어요":"결과를 다시 생성했습니다."};FEEDBACKS.unshift({name:"Market Buzz Ranking Agent",type:type,comment:map[type]||"",div:"S&T",time:"방금"});const el=document.getElementById("fbList");if(el)el.innerHTML=FEEDBACKS.map(fbCard).join("");toast("피드백이 반영되었습니다: "+type);}
+
+/* ===== 프롬프트 예제 라이브러리 (하나증권 업무용 원본 예제) ===== */
+const PROMPTS_LIB=[
+ {cat:"시장·리서치",title:"아침 시장 브리핑",tip:"날짜·섹터만 바꿔 매일 재사용. 출처·참고용 문구 포함.",text:`너는 증권사 리서치 보조 에이전트야.
+오늘 [날짜] 국내 증시의 주요 이슈를 뉴스·공시를 바탕으로 5줄로 요약해줘.
+섹터별 한 줄 코멘트와 출처·수집 시점을 함께 표시하고,
+투자 매수/매도 권유 표현은 쓰지 말고 내부 업무 참고용으로 작성해줘.`},
+ {cat:"시장·리서치",title:"종목 이슈 타임라인",tip:"[종목명]만 바꾸면 됨. 추정은 '추정'으로 표시.",text:`[종목명]의 최근 2주 주요 뉴스·공시를 날짜순으로 정리하고,
+각 이벤트의 주가 영향(상승/하락/중립)을 표로 보여줘.
+확인된 출처를 표시하고, 불확실한 내용은 '추정'으로 표시하고 매매 권유는 하지 마.`},
+ {cat:"시장·리서치",title:"테마 동향 모니터링",tip:"'추천'이 아니라 '관찰' 관점으로 프레이밍.",text:`최근 시장에서 주목받는 [테마] 관련 동향을 뉴스량·관련 종목·근거로 정리해줘.
+'과열 / 관심 / 관찰 필요'처럼 모니터링 관점으로 표현하고,
+단기 변동성 유의 문구를 포함하되 투자 추천은 하지 마. 출처와 기준 시점을 표시해줘.`},
+ {cat:"경쟁사·전략",title:"경쟁사 이벤트 정리",tip:"본사관리·마케팅용. 비방 금지·추정 표시가 핵심.",text:`너는 증권사 본사관리 부서의 경쟁사 이벤트 분석 에이전트야.
+국내 주요 증권사의 공식 이벤트 페이지·뉴스·공시를 바탕으로
+최근 30일간 진행 중인 이벤트와 프로모션 동향을 정리해줘.
+출력: 1.증권사명 2.이벤트명 3.상품군 4.혜택 유형 5.종료일 6.공격성 점수 7.자사 영향도 8.추천 대응 액션
+확인된 출처·수집 시점을 표시하고 추정은 '추정'으로 표시, 비방 없이 내부 전략 참고용으로 작성해줘.`},
+ {cat:"경쟁사·전략",title:"수수료·혜택 비교표",tip:"[상품군]만 교체. 공개 정보 기준 명시.",text:`국내 주요 증권사의 [상품군] 수수료·혜택을 공개 정보 기준으로 비교 표로 정리해줘.
+열은 증권사·혜택 내용·조건·기간으로 하고, 출처와 수집 시점을 표시해줘.
+추정은 '추정'으로 표시하고, 비방 없이 내부 전략 참고용으로 작성해줘.`},
+ {cat:"경쟁사·전략",title:"경쟁사 앱 업데이트 추적",tip:"AI디지털·기획용. 공개 업데이트 노트 기반.",text:`경쟁 증권사 앱의 최근 업데이트와 신규 기능을 앱스토어 공개 정보 기준으로 정리해줘.
+앱별 최근 업데이트 요약, 신규 기능, 자사 대비 격차, 추천 대응 액션 순으로 작성하고,
+출처와 수집 시점을 표시해줘. 확인 불가한 내용은 '추정'으로 표시해줘.`},
+ {cat:"IB·공시",title:"공시 핵심 요약",tip:"공개 공시 기반·미공개정보 배제 문구 필수.",text:`[기업명]의 최근 공시 [공시유형]을 핵심만 5줄로 요약하고,
+자금조달 / 지배구조 / 실적 / 기타 중 어디에 해당하는지 분류해줘.
+공개 공시 기반으로만 작성하고, 미공개정보·투자권유로 오해될 표현은 사용하지 마. 출처(접수번호·일자)를 표시해줘.`},
+ {cat:"IB·공시",title:"딜 후보 점검 체크리스트",tip:"'검토 후보'로 표현, 확정 표현 금지.",text:`[기업명]이 자금조달·M&A 가능성이 있는지 공개 공시·뉴스·재무 신호로 점검해줘.
+신호(현금성 자산, 차입/만기, 증자 이력 등), 예상 딜 유형(가능성), 판단 근거, 담당자 검토 필요 여부를 정리해줘.
+모든 결론은 '가능성/추정'으로 표현하고, 미공개정보 사용과 투자 권유는 배제해줘.`},
+ {cat:"IB·공시",title:"피치 자료 핵심 포인트",tip:"초안 작성 보조용. 사실·공개정보 기준.",text:`[기업명] 대상 [딜 유형] 검토를 위한 피치 자료에 들어갈 핵심 포인트를
+회사 개요·산업 위치·자금 수요 가설·예상 일정·리스크로 나눠 개조식으로 정리해줘.
+공개 정보 기준으로만 작성하고, 단정적 표현 대신 '가능성/검토 필요'로 표현해줘.`},
+ {cat:"WM·상담",title:"PB 상담 참고 코멘트",tip:"매매 권유 금지·참고용 문구·리스크 유의 포함.",text:`[종목명] 보유 고객 상담을 앞두고, 최근 이슈와 유의점을 PB가 참고할 한 줄 코멘트로 정리해줘.
+매수/매도 권유 표현 없이 '참고용' 문구를 포함하고, 리스크 유의사항과 출처를 덧붙여줘.`},
+ {cat:"WM·상담",title:"금융상품 쉬운 설명",tip:"원금손실 등 유의사항 필수, 단정적 수익 표현 금지.",text:`[상품명]을 금융 비전문 고객도 이해하도록 쉬운 말 5문장으로 설명해줘.
+원금손실 가능성 등 유의사항을 반드시 포함하고, 단정적 수익 보장 표현은 쓰지 마.`},
+ {cat:"WM·상담",title:"고객 문의 응대 초안",tip:"FAQ 자동화에 활용. 규정 확인 안내 포함.",text:`고객의 [문의 내용]에 대한 정중하고 정확한 응대 초안을 작성해줘.
+핵심 답변 → 근거/절차 → 추가 확인이 필요한 점 순서로 작성하고,
+규정·약관에 따라 달라질 수 있는 부분은 담당 부서 확인을 안내해줘.`},
+ {cat:"요약·문서",title:"회의록 자동 정리",tip:"회의 메모 붙여넣기만 하면 끝.",text:`아래 회의 내용을 결정사항 / 할 일(담당자·기한) / 논의사항 세 가지로 나눠 정리해줘.
+[회의 내용 붙여넣기]`},
+ {cat:"요약·문서",title:"리서치 리포트 3줄 요약",tip:"사실 위주, 단정적 추천 제거.",text:`아래 리서치 리포트를 핵심 3줄과 주요 포인트(사실 위주)로 요약해줘.
+단정적 투자 추천 표현은 빼고, 가정·전제는 명확히 구분하고 출처를 남겨줘.
+[리포트 붙여넣기]`},
+ {cat:"요약·문서",title:"긴 문서 개조식 변환",tip:"보고용 슬라이드 초안에 유용.",text:`아래 문서를 임원 보고용으로 개조식(불릿) 한 장 분량으로 요약해줘.
+배경 / 현황 / 시사점 / 다음 액션 순서로 정리하고, 숫자·날짜는 그대로 유지해줘.
+[문서 붙여넣기]`},
+ {cat:"메일·소통",title:"정중한 메일 회신",tip:"받은 메일만 붙여넣으면 회신 초안 생성.",text:`아래 메일에 대한 정중하고 간결한 회신 초안을 작성해줘.
+핵심 답변 → 근거 → 다음 액션(필요 시 일정 제안) 순서로 작성해줘.
+[받은 메일 붙여넣기]`},
+ {cat:"메일·소통",title:"일정 조율 메일",tip:"후보 일정만 넣으면 됨.",text:`[상대/부서]와 [목적] 미팅 일정을 조율하는 메일을 작성해줘.
+후보 일정 [날짜 후보들]을 제시하고, 회신 마감과 화상/대면 여부를 함께 물어봐줘. 정중하고 간결하게.`},
+ {cat:"데이터·정리",title:"텍스트 → 표 정리",tip:"열 항목만 지정하면 깔끔한 표로.",text:`아래 내용을 [열 항목: 예) 항목·값·비고] 열을 가진 표로 정리해줘.
+빈 값은 '-'로 표시하고, 단위가 있으면 통일해줘.
+[원문 붙여넣기]`},
+ {cat:"데이터·정리",title:"필요 데이터 항목 설계",tip:"새 에이전트 기획 전 단계에 유용.",text:`[업무/에이전트 목적]에 필요한 데이터 항목을 표로 정리해줘.
+열은 항목명·설명·예시·출처(공개/내부)·민감도로 하고, 외부 공개 데이터로 가능한 것과 내부망이 필요한 것을 구분해줘.`},
+ {cat:"에이전트 설계",title:"에이전트 기획 초안",tip:"아이디어 → 설계서 빠른 변환.",text:`너는 에이전트 설계 전문가야.
+[업무 목적]을 돕는 에이전트의 역할·입력 데이터·출력 형식·제약조건(투자권유 금지·출처 표시·추정 표시)을 정리하고,
+바로 쓸 수 있는 복사용 프롬프트 초안을 만들어줘. 외부 공개 데이터 우선으로 설계해줘.`},
+ {cat:"에이전트 설계",title:"프롬프트 5요소로 개선",tip:"Prompt Doctor와 함께 쓰면 좋음.",text:`아래 프롬프트를 역할·업무 목적·입력 데이터·출력 형식·제약조건 5요소가 모두 들어가게
+더 구체적이고 안전하게 개선해줘. 투자권유 방지·출처 표시 조건을 추가하고, 초보 직원도 이해하기 쉽게 다듬어줘.
+[프롬프트 붙여넣기]`},
+ {cat:"에이전트 설계",title:"출력 형식 표준화",tip:"대시보드화하기 쉽게 형식 고정.",text:`아래 업무 결과를 항상 같은 형식으로 출력하도록 프롬프트를 만들어줘.
+출력 형식: 1.요약 2.핵심 항목 표 3.본부별 참고 코멘트 4.출처·기준 시점 5.유의사항(참고용·투자권유 아님).
+[업무 설명 붙여넣기]`},
+];
+function promptLib(){
+ state.plibCat=state.plibCat||"전체";
+ const cats=["전체"].concat(Array.from(new Set(PROMPTS_LIB.map(p=>p.cat))));
+ const list=state.plibCat==="전체"?PROMPTS_LIB:PROMPTS_LIB.filter(p=>p.cat===state.plibCat);
+ return `
+ <h1>프롬프트 예제</h1><p class="sub">바로 복사해 Claude에 붙여넣어 쓰는 업무용 프롬프트 모음입니다. <b>[ ]</b> 대괄호 부분만 본인 상황에 맞게 바꿔주세요.</p>
+ <div class="card pad" style="margin-top:12px;background:#f8fafc;font-size:12px;color:#475569">총 ${PROMPTS_LIB.length}개 · 카테고리별로 골라 쓰세요. 모든 예제는 <b>투자권유가 아닌 내부 업무 참고용</b>으로 설계됐습니다. 더 많은 일반 프롬프트는 외부 모음 <a href="https://claude-prompts-kr.vercel.app" target="_blank" style="color:#4f46e5">‘300 Claude Prompts (우주보스)’</a> 도 참고하세요.</div>
+ <div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap">${cats.map(c=>`<button class="chip ${state.plibCat===c?"on":""}" onclick="setPlibCat('${c}')">${c}</button>`).join("")}</div>
+ <div class="grid g2" style="margin-top:16px">${list.map(p=>`<div class="card pad"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:13px">${p.title}</b>${pill(p.cat,"indigo")}</div><div style="margin-top:8px">${codebox("프롬프트",p.text)}</div><div class="muted" style="font-size:11px;margin-top:6px">💡 ${p.tip}</div></div>`).join("")}</div>`;
+}
+function setPlibCat(c){state.plibCat=c;render();}
+
+/* ===== 에이전트 공유 공간 ===== */
+let SHARE=[
+ {id:"s1",name:"아침 시황 3줄 요약",author:"S&T 박지훈",div:"S&T",desc:"매일 장 시작 전 주요 지수·이슈를 3줄로 요약해 단톡방에 공유",data:["뉴스 검색"],likes:42,uses:18,status:"공유중",tags:["요약","아침브리핑"]},
+ {id:"s2",name:"공모주 일정 정리 도우미",author:"WM 김서연",div:"WM",desc:"이번 주 공모주 청약·환불·상장일과 예상 고객 문의를 정리",data:["IPO 일정","뉴스"],likes:38,uses:25,status:"공유중",tags:["공모주","상담"]},
+ {id:"s3",name:"경쟁사 수수료 변화 알리미",author:"본사관리 이도윤",div:"본사관리",desc:"경쟁사 수수료·이벤트 변화를 공개 정보 기준으로 표 비교",data:["이벤트 페이지","뉴스"],likes:30,uses:12,status:"공유중",tags:["경쟁사","전략"]},
+ {id:"s4",name:"종목 한 줄 코멘트 생성기",author:"WM 정민재",div:"WM",desc:"보유 종목 상담 전 참고 코멘트(참고용·매매 권유 아님)",data:["뉴스","주가"],likes:55,uses:33,status:"공유중",tags:["WM","상담"]},
+ {id:"s5",name:"공시 키워드 모니터",author:"IB 최아라",div:"IB",desc:"관심 키워드 포함 공시를 모아 IB 검토 후보로 정리",data:["DART 공시"],likes:21,uses:7,status:"검토중",tags:["IB","공시"]},
+ {id:"s6",name:"리포트 3줄 요약기",author:"리서치 한지우",div:"리서치",desc:"리서치 리포트를 핵심 3줄로 요약(사실 위주, 추천 표현 제거)",data:["리포트","뉴스"],likes:47,uses:29,status:"공유중",tags:["요약","리서치"]},
+ {id:"s7",name:"회의록 자동 정리기",author:"AI디지털 오세훈",div:"AI디지털",desc:"회의 메모를 결정사항·할 일(담당자·기한)·논의사항으로 자동 정리",data:["내부 문서(붙여넣기)"],likes:64,uses:41,status:"공유중",tags:["문서","자동화"]},
+ {id:"s8",name:"테마 과열 관찰 노트",author:"S&T 강하늘",div:"S&T",desc:"관심 테마의 뉴스량·거래대금을 모아 ‘관찰 필요’ 관점으로 정리",data:["뉴스","거래대금"],likes:26,uses:10,status:"공유중",tags:["테마","모니터링"]},
+];
+function shareHub(){
+ state.shareDiv=state.shareDiv||"전체";
+ const divs=["전체"].concat(Array.from(new Set(SHARE.map(x=>x.div))));
+ let list=SHARE.slice().sort((a,b)=>b.likes-a.likes);
+ if(state.shareDiv!=="전체")list=list.filter(x=>x.div===state.shareDiv);
+ const top=SHARE.slice().sort((a,b)=>b.likes-a.likes).slice(0,3);
+ return `
+ <h1>에이전트 공유 공간</h1><p class="sub">직원들이 직접 만든 에이전트를 공유하고, 마음에 들면 가져와서 내 업무에 맞게 따라 만드는 공간입니다.</p>
+ <div class="card pad" style="margin-top:12px;background:#ecfdf5;border-color:#a7f3d0;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div style="font-size:13px;color:#065f46">🔥 이번 주 인기 · ${top.map(t=>t.name).join(" · ")}</div><button class="btn btn-indigo" onclick="goto('converter')">+ 내 에이전트 공유하기</button></div>
+ <div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap">${divs.map(d=>`<button class="chip ${state.shareDiv===d?"on":""}" onclick="setShareDiv('${d}')">${d}</button>`).join("")}</div>
+ <div class="muted" style="font-size:12px;margin-top:8px">인기순 정렬 · 공유 에이전트는 모두 내부 업무 참고용이며 투자 권유가 아닙니다.</div>
+ <div class="grid g2" style="margin-top:14px">${list.map(x=>`
+  <div class="card pad"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:13px">${x.name}</b>${pill(x.status,x.status==="공유중"?"emerald":"amber")}</div>
+   <div class="muted" style="font-size:12px;margin-top:4px">${x.div} · ${x.author}</div>
+   <div style="font-size:13px;margin-top:8px">${x.desc}</div>
+   <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">${x.data.map(d=>pill(d,"indigo")).join("")}${x.tags.map(t=>pill("#"+t)).join("")}</div>
+   <div class="muted" style="font-size:12px;margin-top:8px">👍 ${x.likes} · 가져간 횟수 ${x.uses}</div>
+   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-ghost" style="font-size:12px;padding:7px 10px" onclick="likeShare('${x.id}')">👍 좋아요</button><button class="btn btn-indigo" style="flex:1;font-size:12px;padding:7px 10px" onclick="importShare('${x.id}')">가져와서 따라 만들기</button></div>
+  </div>`).join("")}</div>`;
+}
+function setShareDiv(d){state.shareDiv=d;render();}
+function likeShare(id){const x=SHARE.find(s=>s.id===id);if(x){x.likes++;render();toast("좋아요! ("+x.likes+")");}}
+function importShare(id){const x=SHARE.find(s=>s.id===id);if(x){x.uses++;state.idea=x.name+" — "+x.desc+" (우리 부서에 맞게 만들고 싶어요)";state.screen="converter";render();toast("내 작업공간으로 가져왔어요. 아이디어 변환기에서 이어서 만드세요.");}}
+
+/* ===== 라우팅 ===== */
+const NAV=[
+ ["만들기",[["home","홈","◫"],["agents","에이전트 만들기","▦"],["share","에이전트 공유 공간","📡"]]],
+ ["배우기",[["claude","Claude 시작 가이드","✦"],["prompt","좋은 프롬프트 작성법","✎"],["doctor","Prompt Doctor","🩺"],["plib","프롬프트 예제","❝"]]],
+ ["내 업무로",[["converter","아이디어 → 에이전트 변환기","✳"]]],
+ ["데이터/운영",[["data","데이터/API 연결 가이드","⛁"],["quality","Agent Quality Monitor","★"]]],
+ ["검토",[["security","보안/준법 체크","🛡"]]],
+];
+let state={screen:"home",agent:null,idea:"",div:"",bp:null,step:0};
+function screens(){
+ switch(state.screen){
+  case "home":return home();
+  case "agents":return agents();
+  case "wizard":return wizard();
+  case "claude":return claude();
+  case "prompt":return promptGuide();
+  case "converter":return converter();
+  case "data":return dataGuide();
+  case "security":return security();
+  case "doctor":return promptDoctor();
+  case "quality":return qualityMonitor();
+  case "plib":return promptLib();
+  case "share":return shareHub();
+  default:return home();
+ }
+}
+function renderNav(){
+ document.getElementById("nav").innerHTML=NAV.map(g=>`<div class="grp">${g[0]}</div>`+g[1].map(it=>{const on=(state.screen===it[0])||(state.screen==="wizard"&&it[0]==="agents");return `<button class="${on?"on":""}" onclick="goto('${it[0]}')"><span class="ic">${it[2]}</span>${it[1]}</button>`;}).join("")).join("");
+ document.getElementById("mobtabs").innerHTML=NAV.flatMap(g=>g[1]).map(it=>`<button class="chip ${state.screen===it[0]?"on":""}" onclick="goto('${it[0]}')">${it[1]}</button>`).join("");
+}
+function render(){document.getElementById("view").innerHTML=screens();renderNav();document.querySelector(".content").scrollTop=0;}
+function goto(s){state.screen=s;render();}
+function startWizard(id){state.agent=id;state.bp=null;state.step=0;state.screen="wizard";render();}
+function startWizardBP(){state.agent=null;state.step=0;state.screen="wizard";render();}
+function customize(id){const a=AGENTS.find(x=>x.id===id);state.idea=a?`${a.name} 에이전트를 우리 부서 업무에 맞게 만들고 싶어요.`:"";state.screen="converter";render();}
+function setDiv(d){state.div=state.div===d?"":d;render();}
+function setIdea(t){state.idea=t;render();}
+function genBP(){state.bp=buildBP(state.idea,state.div);document.getElementById("bpOut").innerHTML=blueprintPanel(state.bp);}
+render();
+</script>
+</body>
+</html>
